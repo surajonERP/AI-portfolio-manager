@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your AI Portfolio Manager</title>
+  <meta name="description" content="An educational portfolio planning tool built on CFA Level 1 concepts, by Suraj Kumar.">
+  <meta name="theme-color" content="#000000">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='black'/><text x='50' y='68' font-size='58' text-anchor='middle' fill='white' font-family='Georgia,serif'>₹</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="topbar">
+    <a class="wordmark" href="#home">Your AI Portfolio Manager</a>
+    <nav class="tabs" aria-label="Sections">
+      <a href="#home" data-tab="home">Home</a>
+      <a href="#profile" data-tab="profile">Your plan</a>
+      <a href="#analytics" data-tab="analytics">Analytics</a>
+      <a href="#optimisation" data-tab="optimisation">Optimisation</a>
+      <a href="#projections" data-tab="projections">Projections</a>
+      <a href="#methodology" data-tab="methodology">Methodology</a>
+    </nav>
+  </header>
+
+  <main id="main" tabindex="-1">
+
+    <!-- ============ HOME ============ -->
+    <section class="view" id="view-home" data-view="home">
+
+      <div class="hero">
+        <h1 class="quote">
+          <span class="line">A financial plan</span>
+          <span class="line">is the best thing</span>
+          <span class="line">you can do for</span>
+          <span class="line">your future self.</span>
+        </h1>
+        <div class="hero-foot">
+          <p class="lede">Answer a few questions about your age, goals and comfort with risk. You get an asset allocation built on CFA frameworks, live market data for every suggested instrument, and a plain-language explanation of why.</p>
+          <div class="actions">
+            <a class="btn btn-primary" href="#profile">Build my plan</a>
+            <a class="btn btn-ghost" href="#methodology">How the numbers work</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="block">
+        <h2 class="block-title">How it works</h2>
+        <ol class="steps">
+          <li>
+            <h3>Tell us about yourself</h3>
+            <p>Your age, investment amount, monthly SIP, time horizon, target return, and how you react when markets fall.</p>
+          </li>
+          <li>
+            <h3>Get your allocation</h3>
+            <p>Your risk ability and willingness are scored separately, and the lower one decides your profile. It maps to a mix of equity, commodities, fixed income and cash.</p>
+          </li>
+          <li>
+            <h3>Explore and adjust</h3>
+            <p>See returns, risk, the efficient frontier and future projections for your portfolio. Move the weights yourself and watch every number update.</p>
+          </li>
+        </ol>
+      </div>
+
+      <div class="block">
+        <h2 class="block-title">What you can explore</h2>
+        <ul class="sections">
+          <li><a href="#profile"><span class="s-name">Your plan</span><span class="s-desc">Risk profile, suggested allocation and live instrument data</span></a></li>
+          <li><a href="#analytics"><span class="s-name">Analytics</span><span class="s-desc">Returns, volatility, Sharpe ratio, drawdowns and correlations</span></a></li>
+          <li><a href="#optimisation"><span class="s-name">Optimisation</span><span class="s-desc">Where your portfolio sits on the efficient frontier</span></a></li>
+          <li><a href="#projections"><span class="s-name">Projections</span><span class="s-desc">Monte Carlo outcomes and historical stress tests</span></a></li>
+          <li><a href="#methodology"><span class="s-name">Methodology</span><span class="s-desc">Every formula, assumption and data source</span></a></li>
+        </ul>
+      </div>
+
+      <div class="block">
+        <h2 class="block-title">Built on CFA Level 1 concepts</h2>
+        <ul class="concepts">
+          <li>Investment Policy Statement</li>
+          <li>Risk ability vs willingness</li>
+          <li>Strategic asset allocation</li>
+          <li>Time value of money</li>
+          <li>Mean-variance optimisation</li>
+          <li>Sharpe and Sortino ratios</li>
+          <li>Beta and correlation</li>
+          <li>Monte Carlo simulation</li>
+        </ul>
+      </div>
+
+      <div class="block about">
+        <h2 class="block-title">About the creator</h2>
+        <p class="about-text">Hi, my name is Suraj Kumar. I'm a third-year B.Com student at SBSC (DU). Having cleared CFA Level 1, I have put all my theoretical knowledge into this project. Enjoy!</p>
+      </div>
+
+    </section>
+
+    <!-- ============ PLACEHOLDER TABS (built in later phases) ============ -->
+    <section class="view" id="view-profile" data-view="profile" hidden>
+      <div class="page-head">
+        <h1>Your plan</h1>
+        <p>Answer these questions about your goals, finances and comfort with risk. It takes about three minutes. Nothing you enter is saved.</p>
+      </div>
+      <div id="plan-form-mount"></div>
+      <div id="plan-results" class="results" tabindex="-1" hidden></div>
+    </section>
+
+    <section class="view" id="view-analytics" data-view="analytics" hidden>
+      <div class="page-head">
+        <h1>Analytics</h1>
+        <p>How your portfolio has behaved historically, measured in INR.</p>
+      </div>
+      <div class="pending">
+        <p>This section is being built. It will show CAGR, volatility, maximum drawdown, Value at Risk, Sharpe and Sortino ratios, beta against Nifty 50, and a correlation matrix.</p>
+        <a class="btn btn-ghost" href="#home">Back to home</a>
+      </div>
+    </section>
+
+    <section class="view" id="view-optimisation" data-view="optimisation" hidden>
+      <div class="page-head">
+        <h1>Optimisation</h1>
+        <p>Your portfolio compared with the best achievable risk-return trade-offs.</p>
+      </div>
+      <div class="pending">
+        <p>This section is being built. It will plot the efficient frontier, the capital allocation line, and your suggested and custom portfolios.</p>
+        <a class="btn btn-ghost" href="#home">Back to home</a>
+      </div>
+    </section>
+
+    <section class="view" id="view-projections" data-view="projections" hidden>
+      <div class="page-head">
+        <h1>Projections</h1>
+        <p>What your lump sum and SIP could grow into, and how the portfolio would have handled past crises.</p>
+      </div>
+      <div class="pending">
+        <p>This section is being built. It will run Monte Carlo simulations over your time horizon and stress-test the portfolio against the 2020 COVID crash and the 2022 rate-hike selloff.</p>
+        <a class="btn btn-ghost" href="#home">Back to home</a>
+      </div>
+    </section>
+
+    <section class="view" id="view-methodology" data-view="methodology" hidden>
+      <div class="page-head">
+        <h1>Methodology</h1>
+        <p>Every rule, formula and assumption behind your plan, and the CFA Level 1 concept each one comes from.</p>
+      </div>
+      <div id="methodology-mount"></div>
+    </section>
+
+  </main>
+
+  <footer class="disclaimer">
+    <p>Educational academic project. Not investment advice. The creator is not a SEBI-registered investment adviser. Market data may be delayed or incomplete, and past performance does not guarantee future returns.</p>
+  </footer>
+
+  <script src="config.js"></script>
+  <script src="engine.js"></script>
+  <script src="market.js"></script>
+  <script src="plan.js"></script>
+  <script src="methodology.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
