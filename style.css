@@ -685,3 +685,5 @@ input[type=range]:focus-visible { outline: 2px solid var(--accent); outline-offs
   /* the phone header is taller, so in-page links need to stop lower */
   #view-methodology .block, #stock-basket, #customise, .results, #plan-form { scroll-margin-top: 125px; }
 }
+
+.about-link { margin-top: 32px; }
