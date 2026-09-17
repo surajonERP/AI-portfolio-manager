@@ -128,6 +128,42 @@ async function callGemini(model, key, facts) {
   }
 }
 
+// ---------- diagnostic: open /api/explain?test=1 in a browser ----------
+// Shows whether the key is set and whether Gemini answers, without revealing the key.
+export async function GET(request) {
+  const url = new URL(request.url);
+  const key = process.env.GEMINI_API_KEY;
+  const models = [process.env.GEMINI_MODEL, ...FALLBACK_MODELS].filter((m, i, a) => m && a.indexOf(m) === i);
+  const report = { keyConfigured: Boolean(key), modelsToTry: models };
+  if (!key || url.searchParams.get("test") !== "1") {
+    report.hint = key ? "Add ?test=1 to the address to send a tiny test request to Gemini." : "GEMINI_API_KEY is not set for this deployment. Add it in Vercel, then redeploy.";
+    return respond(report, 200);
+  }
+  const ip = (request.headers.get("x-forwarded-for") || "").split(",")[0].trim() || "unknown";
+  if (!allowVisitor(ip) || !allowToday()) return respond({ ...report, error: "Rate limit reached; try again in a few minutes." }, 429);
+  report.results = [];
+  for (const model of models) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 15000);
+    try {
+      const res = await fetch(`${API_BASE}/${encodeURIComponent(model)}:generateContent`, {
+        method: "POST", signal: controller.signal,
+        headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+        body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: "Reply with the single word OK." }] }], generationConfig: { maxOutputTokens: 256 } })
+      });
+      const data = await res.json().catch(() => ({}));
+      const text = (data?.candidates?.[0]?.content?.parts || []).map(p => p.text || "").join("").trim();
+      report.results.push({ model, status: res.status, ok: res.ok && Boolean(text), reply: text.slice(0, 40) || null, error: data?.error?.message || null });
+      if (res.ok && text) break;
+    } catch (err) {
+      report.results.push({ model, ok: false, error: err.name === "AbortError" ? "Timed out" : String(err.message || err) });
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+  return respond(report, 200);
+}
+
 // ---------- handler ----------
 export async function POST(request) {
   const key = process.env.GEMINI_API_KEY;
