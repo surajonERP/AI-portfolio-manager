@@ -12,7 +12,8 @@
 // Optional: GEMINI_MODEL to choose the model; the fallbacks below are tried in order.
 // ============================================================
 
-const FALLBACK_MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite"];
+// Google retires older models for new users; its error messages name the replacement.
+const FALLBACK_MODELS = ["gemini-3.5-flash-lite", "gemini-3.5-flash", "gemini-2.5-flash"];
 const API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 const MAX_BODY_BYTES = 8000;
 const PER_VISITOR_LIMIT = 8;          // requests per visitor per 10 minutes (per server instance)
