@@ -634,9 +634,9 @@ input[type=range]:focus-visible { outline: 2px solid var(--accent); outline-offs
 }
 
 /* AI explanation */
-.ai-status { margin: 0 0 20px; font-family: var(--sans); font-size: 13px; color: var(--accent); }
+.advice p.ai-status { margin: 0 0 20px; max-width: 70ch; line-height: 1.5; font-weight: 400; font-family: var(--sans); font-size: 13px; color: var(--accent); }
 .ai-status:not(.done)::before { content: ""; display: inline-block; width: 6px; height: 6px; margin-right: 8px; border-radius: 50%; background: var(--accent); vertical-align: middle; animation: pulse 1.2s ease-in-out infinite; }
-.ai-status.done { color: var(--grey-2); }
+.advice p.ai-status.done { color: var(--grey-2); }
 .advice p.ai-greeting { margin-bottom: 8px; }
 @keyframes pulse { 50% { opacity: 0.25; } }
 @media (prefers-reduced-motion: reduce) { .ai-status::before { animation: none; } }

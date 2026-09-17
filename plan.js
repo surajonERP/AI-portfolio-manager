@@ -10,6 +10,8 @@
   window.APM_STATE = window.APM_STATE || {};
 
   // ---------- helpers ----------
+  const an = w => (/^[AEIOU]/i.test(String(w)) ? "an" : "a");
+  const properName = s => String(s).replace(/(^|[\s-])(\p{L})/gu, (m, sep, ch) => sep + ch.toUpperCase());
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const inr = n => "₹" + Math.round(n).toLocaleString("en-IN");
   const pct = (n, d = 1) => (n * 100).toFixed(d) + "%";
@@ -169,7 +171,7 @@
 
   function buildExplanation(p) {
     const i = p.input;
-    const who = i.name ? esc(i.name) + ", you" : "You";
+    const who = i.name ? esc(properName(i.name)) + ", you" : "You";
     const goal = GOALS.find(g => g.value === i.goal).phrase;
     const al = p.allocation;
     const commodities = al.gold + al.silver;
@@ -189,12 +191,12 @@
     }
     paras.push(risk);
 
-    paras.push(`With this in mind, your best course of action is a <strong>${p.profile.name}</strong> portfolio: ${al.inEq}% in Indian equity, ${commodities}% in commodities (${al.gold}% gold, ${al.silver}% silver), ${al.fi}% in fixed income and ${al.cash}% in cash. It is expected to compound at about ${pct(p.stats.geometric)} a year, with annual volatility of about ${pct(p.stats.vol)}.`);
+    paras.push(`With this in mind, your best course of action is ${an(p.profile.name)} <strong>${p.profile.name}</strong> portfolio: ${al.inEq}% in Indian equity, ${commodities}% in commodities (${al.gold}% gold, ${al.silver}% silver), ${al.fi}% in fixed income and ${al.cash}% in cash. It is expected to compound at about ${pct(p.stats.geometric)} a year, with annual volatility of about ${pct(p.stats.vol)}.`);
 
     const b = p.basket;
     if (i.vehicle === "stocks" && b) {
       if (b.ok) {
-        paras.push(`You chose to hold Indian equity through individual stocks. From the Nifty 100, the system picked ${b.holdings.length} companies across ${b.groups} sector groups whose last five years of risk suit a ${p.profile.name} investor. Their average beta is ${b.avgBeta.toFixed(2)} against a target of ${b.target.targetBeta.toFixed(2)}, meaning they have tended to move ${b.avgBeta < 1 ? "less" : "more"} than the market.`);
+        paras.push(`You chose to hold Indian equity through individual stocks. From the Nifty 100, the system picked ${b.holdings.length} companies across ${b.groups} sector groups whose last five years of risk suit ${an(p.profile.name)} ${p.profile.name} investor. Their average beta is ${b.avgBeta.toFixed(2)} against a target of ${b.target.targetBeta.toFixed(2)}, meaning they have tended to move ${b.avgBeta < 1 ? "less" : "more"} than the market.`);
       } else if (b.reason === "too-few") {
         paras.push(`You chose individual stocks, but ${inr(b.equityAmount)} in equity is too little to build a properly diversified basket of whole shares, so the plan uses the index fund instead. Stocks become practical from roughly ${inr(b.suggestedMinimum)} in equity.`);
       } else {
@@ -208,7 +210,9 @@
       feas = `Your ${i.targetReturn}% target is within reach of this allocation.`;
     } else {
       const lever = pr.requiredSip > 0
-        ? ` To reach the same end amount at the expected return, your monthly SIP would need to be about ${inr(roundNice(pr.requiredSip))}${i.sip ? ` instead of ${inr(i.sip)}` : ""}.`
+        ? (i.sip
+            ? ` To reach the same end amount at the expected return, your monthly SIP would need to be about ${inr(roundNice(pr.requiredSip))} instead of ${inr(i.sip)}.`
+            : ` Starting a monthly SIP of about ${inr(roundNice(pr.requiredSip))} alongside your lump sum would close the gap at the expected return.`)
         : "";
       if (f.verdict === "stretch") {
         feas = `Your ${i.targetReturn}% target is a stretch: it is slightly above what this allocation is expected to deliver.${lever}`;
@@ -284,7 +288,7 @@
       const msg = b.reason === "too-few"
         ? (b.lack === "money"
             ? `With ${inr(b.equityAmount)} for equity, a basket of whole shares couldn't reach ${C.stocks.minStocks} suitable stocks across ${C.stocks.minGroups} sector groups. The tool needs at least that, and ${inr(C.stocks.minEquity)} in equity; below that, company-specific risk is too concentrated, so the index fund is used instead. Stocks become practical from roughly ${inr(b.suggestedMinimum)} in equity.`
-            : `Too few Nifty 100 stocks currently fit a ${esc(b.profile)} investor's beta band (${b.limits.betaLow.toFixed(2)} to ${b.limits.betaHigh.toFixed(2)}) and risk limits to build a basket of at least ${C.stocks.minStocks} stocks across ${C.stocks.minGroups} sector groups, even after loosening the volatility and drawdown limits. The index fund is used instead.`)
+            : `Too few Nifty 100 stocks currently fit ${an(b.profile)} ${esc(b.profile)} investor's beta band (${b.limits.betaLow.toFixed(2)} to ${b.limits.betaHigh.toFixed(2)}) and risk limits to build a basket of at least ${C.stocks.minStocks} stocks across ${C.stocks.minGroups} sector groups, even after loosening the volatility and drawdown limits. The index fund is used instead.`)
         : "The Nifty 100 screen couldn't be loaded right now, so the index fund is shown instead. Try again in a few minutes.";
       return `<div class="result-block" id="stock-basket"><h3>Nifty 100 stock basket</h3><p class="data-status">${msg}</p></div>`;
     }
@@ -305,7 +309,7 @@
     return `
       <div class="result-block" id="stock-basket">
         <h3>Nifty 100 stock basket</h3>
-        <p class="basket-lede">Of ${st.screened} Nifty 100 stocks screened, ${st.passedReturn} beat the ${C.cma.riskFree}% risk-free rate over five years, ${st.inBand} of those had a beta between ${lim.betaLow.toFixed(2)} and ${lim.betaHigh.toFixed(2)} (the band around a ${esc(b.profile)} investor's ${t.targetBeta.toFixed(2)} target), and ${st.passedRisk} also stayed within volatility of ${lim.maxVol}% and maximum drawdown of −${lim.maxDrawdown}%. The closest betas were picked first, with no more than ${b.groupCap} ${b.groupCap === 1 ? "stock" : "stocks"} from any sector group.</p>
+        <p class="basket-lede">Of ${st.screened} Nifty 100 stocks screened, ${st.passedReturn} beat the ${C.cma.riskFree}% risk-free rate over five years, ${st.inBand} of those had a beta between ${lim.betaLow.toFixed(2)} and ${lim.betaHigh.toFixed(2)} (the band around ${an(b.profile)} ${esc(b.profile)} investor's ${t.targetBeta.toFixed(2)} target), and ${st.passedRisk} also stayed within volatility of ${lim.maxVol}% and maximum drawdown of −${lim.maxDrawdown}%. The closest betas were picked first, with no more than ${b.groupCap} ${b.groupCap === 1 ? "stock" : "stocks"} from any sector group.</p>
         ${!b.fullSize ? `<p class="data-status">Only ${b.size} suitable stocks fit these limits with enough spread across sector groups, so the basket holds ${b.size} instead of ${C.stocks.count}, with more money in each. Fewer suitable stocks are better than filling the basket with ones that don't match your risk.</p>` : ""}
         ${b.relaxed ? `<p class="data-status">Too few stocks met the original limits (volatility ${t.maxVol}%, drawdown −${t.maxDrawdown}%), so they were loosened to the levels above.</p>` : ""}
         ${st.skippedPrice ? `<p class="data-status">${st.skippedPrice} otherwise suitable ${st.skippedPrice === 1 ? "stock was" : "stocks were"} skipped because one share costs more than the amount set aside per stock.</p>` : ""}
@@ -390,17 +394,18 @@
         body: JSON.stringify({ facts: buildFacts(p) }),
         signal: controller.signal
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({ error: res.status === 404 ? "the AI function wasn't found on the server (check api/explain.mjs is in the api folder)" : `server responded ${res.status}` }));
       if (myRequest !== aiRequest) return;               // a newer plan was built meanwhile
       if (!res.ok || !data.verified || !Array.isArray(data.paragraphs)) throw new Error(data.error || "Unavailable");
 
-      const who = p.input.name ? `<p class="ai-greeting">${esc(p.input.name)},</p>` : "";
+      const who = p.input.name ? `<p class="ai-greeting">${esc(properName(p.input.name))},</p>` : "";
       target.innerHTML = who + data.paragraphs.map(t => `<p>${esc(t)}</p>`).join("");
       status.textContent = "Written by Gemini from the calculations on this page. Every number it used was checked against them automatically.";
       status.classList.add("done");
     } catch (err) {
       if (myRequest !== aiRequest) return;
-      status.textContent = "Showing the standard explanation; the AI explanation isn't available right now.";
+      const reason = String(err && err.message || "").slice(0, 160);
+      status.textContent = "Showing the standard explanation; the AI explanation isn't available right now." + (reason ? ` (Reason: ${reason})` : "");
       status.classList.add("done");
     } finally {
       clearTimeout(timer);
