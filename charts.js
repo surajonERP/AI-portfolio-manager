@@ -121,7 +121,7 @@
     };
     const median = bands.map((b, i) => `${i ? "L" : "M"}${sx(i).toFixed(1)},${sy(b[50]).toFixed(1)}`).join("");
     const every = Math.ceil((n - 1) / (compact ? 5 : 10));
-    const xLabels = bands.map((_, i) => i % every === 0 || i === n - 1
+    const xLabels = bands.map((_, i) => (i % every === 0 && (n - 1 - i >= every / 2 || i === n - 1)) || i === n - 1
       ? `<text class="tick" x="${sx(i).toFixed(1)}" y="${f.y0 + 18}" text-anchor="${i === n - 1 ? "end" : i === 0 ? "start" : "middle"}">${i === 0 ? "Now" : "Yr " + i}</text>` : "").join("");
     const tgt = target ? `<line class="target" x1="${f.x0}" x2="${f.x1}" y1="${sy(target).toFixed(1)}" y2="${sy(target).toFixed(1)}"/>` : "";
 

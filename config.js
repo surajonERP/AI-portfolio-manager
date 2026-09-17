@@ -232,7 +232,7 @@ window.APM_CONFIG = {
   // ---------- 10. Analytics, optimisation and projections ----------
   analytics: {
     benchmarkLabel: "Nifty 50 (with dividends)",  // the Indian equity history series
-    rebalance: "monthly",   // back-tests reset to target weights every month
+    rebalance: "annual",    // back-tests reset to target weights every December ("monthly" also works)
     var: 0.95,              // Value at Risk confidence level
 
     frontier: {
@@ -255,5 +255,13 @@ window.APM_CONFIG = {
       { name: "2022 rate-hike selloff", from: "2021-12", to: "2022-06",
         note: "Central banks raised rates quickly to fight inflation, hitting equities and bonds." }
     ]
+  },
+
+  // ---------- 11. AI-written explanations (Gemini) ----------
+  // The model, the API key and the daily limits live on the server (api/explain.mjs and
+  // Vercel's environment variables). If the AI is unavailable, the template text is kept.
+  ai: {
+    enabled: true,
+    timeoutMs: 25000
   }
 };

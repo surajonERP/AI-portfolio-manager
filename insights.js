@@ -121,7 +121,7 @@
         <h3>Growth of ${inr(lump)}</h3>
         ${legend(cols)}
         <div class="chart-box">${chart}</div>
-        <p class="footnote">Back-test using month-end prices, with weights reset to target every month. Fund costs, brokerage and taxes are not included. Past performance does not guarantee future results.</p>
+        <p class="footnote">Back-test using month-end prices. Holdings drift with the markets during each year and are reset to the target weights every December, as a real investor rebalancing once a year would. Fund costs, brokerage and taxes on rebalancing are not included. Past performance does not guarantee future results.</p>
         ${stockNote(p)}
       </div>
       <div class="result-block"><h3>Risk and return</h3>${metrics}</div>
@@ -177,7 +177,8 @@
         <thead><tr><th></th>${colsData.map(c => `<th class="num"><span class="swatch ${c.cls}"></span>${c.label}</th>`).join("")}</tr></thead>
         <tbody>
           ${ORDER.map((k, i) => `<tr><th scope="row">${C.assets[k].name}</th>${colsData.map(c => `<td class="num">${Math.round(c.w[i] * 100)}%</td>`).join("")}</tr>`).join("")}
-          <tr class="sep"><th scope="row">Expected return</th>${colsData.map(c => `<td class="num">${pct(c.st.ret)}</td>`).join("")}</tr>
+          <tr class="sep"><th scope="row">Expected return (arithmetic)<span class="row-hint">The average annual return used in mean-variance analysis</span></th>${colsData.map(c => `<td class="num">${pct(c.st.ret)}</td>`).join("")}</tr>
+          <tr><th scope="row">Expected compound return<span class="row-hint">≈ arithmetic return − volatility² ÷ 2; the figure on Your plan</span></th>${colsData.map(c => `<td class="num">${pct(c.st.ret - c.st.vol * c.st.vol / 2)}</td>`).join("")}</tr>
           <tr><th scope="row">Expected volatility</th>${colsData.map(c => `<td class="num">${pct(c.st.vol)}</td>`).join("")}</tr>
           <tr><th scope="row">Sharpe ratio</th>${colsData.map(c => `<td class="num">${c.st.sharpe.toFixed(2)}</td>`).join("")}</tr>
         </tbody>
@@ -191,7 +192,7 @@
         paras.push(`Your suggested portfolio sits almost on the efficient frontier: at its ${pct(sugg.vol)} expected volatility, no mix of these five asset classes is expected to earn meaningfully more.`);
       } else {
         const diffs = ORDER.map((k, i) => ({ k, d: same.w[i] * 100 - p.allocation[k] })).sort((a, b) => Math.abs(b.d) - Math.abs(a.d)).slice(0, 2);
-        paras.push(`At the same expected volatility as your suggested portfolio (${pct(sugg.vol)}), the frontier portfolio is expected to return ${pct(same.ret)} instead of ${pct(sugg.expReturn)}, about ${(gap * 100).toFixed(1)} percentage points more. It gets there mainly by ${diffs.map(x => `${x.d > 0 ? "raising" : "cutting"} ${C.assets[x.k].name.toLowerCase()} by ${Math.abs(Math.round(x.d))} points`).join(" and ")}. The suggested allocation deliberately doesn't chase this: frontier weights swing sharply with small changes in the expected-return estimates, which are uncertain, while the profile allocations are designed to stay stable and diversified.`);
+        paras.push(`At the same expected volatility as your suggested portfolio (${pct(sugg.vol)}), the frontier portfolio has an expected (arithmetic) return of ${pct(same.ret)} instead of ${pct(sugg.expReturn)}, about ${(gap * 100).toFixed(1)} percentage points more. It gets there mainly by ${diffs.map(x => `${x.d > 0 ? "raising" : "cutting"} ${C.assets[x.k].name.toLowerCase()} by ${Math.abs(Math.round(x.d))} points`).join(" and ")}. The suggested allocation deliberately doesn't chase this: frontier weights swing sharply with small changes in the expected-return estimates, which are uncertain, while the profile allocations are designed to stay stable and diversified.`);
       }
     }
     const fiIdx = ORDER.indexOf("fi"), cashIdx = ORDER.indexOf("cash");

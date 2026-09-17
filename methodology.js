@@ -158,9 +158,9 @@
         <h2 class="block-title">Back-test and risk measures</h2>
         <div class="m-body">
           <p><strong>CFA concept:</strong> Holding period and compound returns, standard deviation, downside risk, beta, Value at Risk (Quantitative Methods, Portfolio Management).</p>
-          <p>The Analytics tab replays each portfolio over the same monthly history used for the capital market assumptions. Weights are reset to target every month, and fund costs, brokerage and taxes are ignored. Indian equity is measured with the Nifty 50 index plus dividends, which is also the benchmark.</p>
+          <p>The Analytics tab replays each portfolio over the same monthly history used for the capital market assumptions. Each holding grows with its own asset class during the year, so weights drift, and they are reset to the target at the end of every December (annual rebalancing, as most investors do, partly because every sale can trigger capital gains tax). Fund costs, brokerage and taxes are ignored. Indian equity is measured with the Nifty 50 index plus dividends, which is also the benchmark.</p>
           <ul class="formulas">
-            <li><span>Portfolio return in month t</span><code>Rₚ,ₜ = Σ wᵢ · Rᵢ,ₜ</code></li>
+            <li><span>Portfolio return in month t</span><code>Rₚ,ₜ = Σ wᵢ,ₜ · Rᵢ,ₜ, where wᵢ,ₜ is each holding's drifted weight since the last December</code></li>
             <li><span>Sharpe ratio</span><code>(mean(Rₚ) × 12 − R<sub>f</sub>) / (s(Rₚ) × √12)</code></li>
             <li><span>Sortino ratio</span><code>(mean(Rₚ) × 12 − R<sub>f</sub>) / downside deviation, counting only months below R<sub>f</sub> / 12</code></li>
             <li><span>Beta</span><code>Cov(Rₚ, R<sub>Nifty</sub>) / Var(R<sub>Nifty</sub>)</code></li>
@@ -231,6 +231,21 @@
       </div>
 
       <div class="block">
+        <h2 class="block-title">AI-written explanations</h2>
+        <div class="m-body">
+          <p><strong>The principle:</strong> the CFA framework makes every decision; AI only explains it. Every score, allocation, return, projection and stock pick on this site is calculated by the formulas above. Google's Gemini model is used for one job only: turning those finished results into a plain-language explanation.</p>
+          <p><strong>Guardrails:</strong></p>
+          <ul class="formulas steps-list">
+            <li><span>1. Minimal data</span><code class="plain">Only computed results are sent, such as age, amounts, scores, weights and projections. Your name never leaves your browser.</code></li>
+            <li><span>2. Strict instructions</span><code class="plain">Gemini must use only those facts, never add statistics of its own, and never recommend or name any security.</code></li>
+            <li><span>3. Number check</span><code class="plain">Every number in Gemini's answer is compared with the calculated facts. If even one can't be traced back, the answer is thrown away.</code></li>
+            <li><span>4. Fallback</span><code class="plain">If Gemini is unavailable, slow, over its free limit or fails the check, the site keeps its own template explanation built from the same numbers.</code></li>
+          </ul>
+          <p>Requests are limited per visitor and per day to stay within Gemini's free tier. On the free tier, Google may use requests to improve its products, which is another reason no personal identifiers are sent.</p>
+        </div>
+      </div>
+
+      <div class="block">
         <h2 class="block-title">Data sources</h2>
         <div class="m-body">
           <p>The Nifty 100 constituent list comes from NSE Indices (<a href="https://www.niftyindices.com" target="_blank" rel="noopener">niftyindices.com</a>). Stock, index, ETF, commodity and currency prices come from Yahoo Finance (<a href="https://finance.yahoo.com" target="_blank" rel="noopener">finance.yahoo.com</a>). Mutual fund NAVs are AMFI data served by MFapi (<a href="https://www.mfapi.in" target="_blank" rel="noopener">mfapi.in</a>; original source <a href="https://www.amfiindia.com" target="_blank" rel="noopener">amfiindia.com</a>). Data is fetched by this site's server and reused for up to six hours.</p>
@@ -240,7 +255,7 @@
       <div class="block">
         <h2 class="block-title">Limitations</h2>
         <div class="m-body">
-          <p>Expected returns are estimates, not promises, and past returns do not guarantee future ones. Yahoo Finance data is accessed through an unofficial interface and may occasionally be delayed or unavailable. Gold and silver are measured with international prices converted to INR, which leaves out Indian import duty and GST. The model covers Indian investments only, so it carries home bias: no exposure to foreign markets. The questionnaire simplifies a full suitability assessment, and taxes, expense ratios and exit loads are not yet included. This is an educational project, not investment advice.</p>
+          <p>Expected returns are estimates, not promises, and past returns do not guarantee future ones. Yahoo Finance data is accessed through an unofficial interface and may occasionally be delayed or unavailable. Gold and silver are measured with international prices converted to INR, which leaves out Indian import duty and GST. The model covers Indian investments only, so it carries home bias: no exposure to foreign markets. The questionnaire simplifies a full suitability assessment, and taxes, expense ratios and exit loads are not yet included. AI-written explanations can still word things imperfectly even when every number is correct. This is an educational project, not investment advice.</p>
         </div>
       </div>
     </div>`;

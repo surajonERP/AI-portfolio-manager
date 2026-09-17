@@ -34,10 +34,20 @@
   }
 
   // ---------- 1. Back-test ----------
-  // Portfolio return each month = Σ weight × asset return (weights reset monthly)
-  function portfolioReturns(allocation, history, order) {
-    return history.months.map((_, t) =>
-      order.reduce((s, k) => s + ((allocation[k] || 0) / 100) * history.returns[k][t], 0));
+  // Each holding grows with its own asset's return, so weights drift between rebalances.
+  // "annual": reset to target weights at the end of every December; "monthly": every month.
+  function portfolioReturns(allocation, history, order, rebalance = "annual") {
+    const target = order.map(k => (allocation[k] || 0) / 100);
+    let holdings = target.slice();
+    return history.months.map((month, t) => {
+      const before = holdings.reduce((s, x) => s + x, 0);
+      holdings = holdings.map((x, i) => x * (1 + history.returns[order[i]][t]));
+      const after = holdings.reduce((s, x) => s + x, 0);
+      if (rebalance === "monthly" || (rebalance === "annual" && month.endsWith("-12"))) {
+        holdings = target.map(w => w * after);
+      }
+      return after / before - 1;
+    });
   }
 
   function riskMetrics(r, bench, rfAnnual, months, varLevel) {
@@ -90,7 +100,7 @@
 
   function backtest(allocation, history, C) {
     const order = C.cma.order;
-    const r = portfolioReturns(allocation, history, order);
+    const r = portfolioReturns(allocation, history, order, C.analytics.rebalance);
     const bench = history.returns.inEq;
     return riskMetrics(r, bench, C.cma.riskFree / 100, history.months, C.analytics.var);
   }
@@ -242,7 +252,7 @@
 
   function stressTests(allocations, history, C) {
     const order = C.cma.order;
-    const series = Object.fromEntries(Object.entries(allocations).map(([name, a]) => [name, portfolioReturns(a, history, order)]));
+    const series = Object.fromEntries(Object.entries(allocations).map(([name, a]) => [name, portfolioReturns(a, history, order, C.analytics.rebalance)]));
     series.benchmark = history.returns.inEq;
     const tests = C.analytics.stressTests
       .filter(t => history.months[0] <= t.from && history.months[history.months.length - 1] >= t.to)

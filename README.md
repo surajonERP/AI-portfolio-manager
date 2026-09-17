@@ -18,6 +18,7 @@ Educational academic project. Not investment advice.
 - `app.js` – switches between tabs
 - `api/yahoo.mjs` – server function: Yahoo Finance prices (runs on Vercel)
 - `api/amfi.mjs` – server function: Indian mutual fund NAVs from MFapi / AMFI (runs on Vercel)
+- `api/explain.mjs` – server function: asks Gemini to explain the plan, checks every number, falls back safely
 - `api/screen.mjs` – server function: reads the official Nifty 100 list and calculates 5-year beta, volatility, drawdown and CAGR for each stock
 - `vercel.json` – gives the stock screen up to 60 seconds to run
 
@@ -32,4 +33,8 @@ but shows long-run assumptions and hides live prices.
 - Phase 3.5: Indian assets only, Nifty 100 stock screen, per-asset history weights, month-ends from daily prices – done
 - Phase 3.6: beta band and sector-group diversification for the stock basket – done
 - Phase 4: Analytics, Optimisation and Projections tabs, custom allocation sliders – done
-- Phase 5: Gemini-written explanations – next
+- Phase 4.1: annual rebalancing, clearer return labels – done
+- Phase 5: Gemini-written explanations with number verification – done
+
+## Setting up Gemini
+Add an environment variable named `GEMINI_API_KEY` in Vercel (Project → Settings → Environment Variables) and redeploy. Optional: `GEMINI_MODEL` to pick a specific model. Never put the key in the code.

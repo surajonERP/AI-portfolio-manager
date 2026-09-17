@@ -327,6 +327,86 @@
       </div>`;
   }
 
+  // ---------- AI explanation (Gemini, via /api/explain) ----------
+  // Only computed results are sent: no name, and nothing Gemini could misuse.
+  function buildFacts(p) {
+    const i = p.input, pr = p.projection, f = p.feasibility, al = p.allocation;
+    const r1 = n => Math.round(n * 1000) / 10;               // 0.1234 -> 12.3 (percent, 1 decimal)
+    const gap = Math.abs(p.ability.total - p.willingness.total);
+    const facts = {
+      age: i.age,
+      lumpSumRupees: i.lump,
+      monthlySipRupees: i.sip,
+      horizonYears: i.horizon,
+      targetReturnPct: i.targetReturn,
+      goal: GOALS.find(g => g.value === i.goal).text,
+      mayNeedMoneyEarly: LIQUIDITY.find(x => x.value === i.liquidity).text,
+      riskAbilityScoreOutOf100: p.ability.total,
+      riskWillingnessScoreOutOf100: p.willingness.total,
+      lowerScoreSetsProfile: gap < 10 ? "closely matched" : p.governing,
+      weakestAbilityFactors: weakest(p.ability.parts),
+      profile: p.profile.name,
+      allocationPct: Object.fromEntries(ORDER.map(k => [C.assets[k].name, al[k]])),
+      commoditiesTotalPct: al.gold + al.silver,
+      expectedCompoundReturnPct: r1(p.stats.geometric),
+      expectedVolatilityPct: r1(p.stats.vol),
+      targetVerdict: { achievable: "within reach", stretch: "a stretch", unrealistic: "unrealistic for this profile" }[f.verdict],
+      targetNeedsProfile: f.required && f.required.index > f.profileIndex ? f.required.name : null,
+      totalInvestedRupees: Math.round(pr.invested),
+      projectedAmountRupees: roundNice(pr.projected),
+      projectedInTodaysMoneyRupees: roundNice(pr.projectedReal),
+      targetAmountRupees: roundNice(pr.targetCorpus),
+      inflationPct: C.cma.inflation,
+      requiredMonthlySipRupees: f.verdict !== "achievable" && pr.requiredSip > 0 ? roundNice(pr.requiredSip) : null,
+      constraintNotes: p.notes.map(n => n.text),
+      equityVehicle: i.vehicle === "stocks" ? "individual Nifty 100 stocks" : "index fund"
+    };
+    if (i.vehicle === "stocks" && p.basket) {
+      facts.stockBasket = p.basket.ok
+        ? { built: true, numberOfStocks: p.basket.holdings.length, sectorGroups: p.basket.groups,
+            averageBeta: Math.round(p.basket.avgBeta * 100) / 100, targetBeta: p.basket.target.targetBeta }
+        : { built: false, reason: p.basket.reason === "too-few" ? "not enough money or suitable stocks for a diversified basket" : "stock data unavailable", usesIndexFundInstead: true };
+    }
+    return facts;
+  }
+
+  let aiRequest = 0;
+  async function enhanceExplanation(p) {
+    if (!C.ai || !C.ai.enabled) return;
+    const status = document.getElementById("ai-status");
+    const target = document.getElementById("advice-text");
+    if (!status || !target) return;
+    const myRequest = ++aiRequest;
+
+    status.hidden = false;
+    status.textContent = "Gemini is writing a personalised explanation from these numbers…";
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), C.ai.timeoutMs);
+    try {
+      const res = await fetch("/api/explain", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ facts: buildFacts(p) }),
+        signal: controller.signal
+      });
+      const data = await res.json();
+      if (myRequest !== aiRequest) return;               // a newer plan was built meanwhile
+      if (!res.ok || !data.verified || !Array.isArray(data.paragraphs)) throw new Error(data.error || "Unavailable");
+
+      const who = p.input.name ? `<p class="ai-greeting">${esc(p.input.name)},</p>` : "";
+      target.innerHTML = who + data.paragraphs.map(t => `<p>${esc(t)}</p>`).join("");
+      status.textContent = "Written by Gemini from the calculations on this page. Every number it used was checked against them automatically.";
+      status.classList.add("done");
+    } catch (err) {
+      if (myRequest !== aiRequest) return;
+      status.textContent = "Showing the standard explanation; the AI explanation isn't available right now.";
+      status.classList.add("done");
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
   // ---------- custom allocation ----------
   function renderCustomise(p) {
     const rows = ORDER.map(k => `
@@ -469,7 +549,8 @@
       </div>
 
       <div class="advice">
-        ${explanation.map(t => `<p>${t}</p>`).join("")}
+        <p class="ai-status" id="ai-status" aria-live="polite" hidden></p>
+        <div id="advice-text">${explanation.map(t => `<p>${t}</p>`).join("")}</div>
         ${p.notes.length ? `<ul class="notes">${p.notes.map(n => `<li>${n.text}</li>`).join("")}</ul>` : ""}
       </div>
 
@@ -565,6 +646,7 @@
 
       resultsMount.innerHTML = renderResults(plan);
       wireCustomise(plan);
+      enhanceExplanation(plan);
       resultsMount.hidden = false;
       resultsMount.scrollIntoView({ behavior: "smooth", block: "start" });
       resultsMount.focus({ preventScroll: true });
