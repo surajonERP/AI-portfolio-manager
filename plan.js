@@ -165,8 +165,11 @@
   }
 
   // ---------- the written explanation (template version; Gemini replaces this later) ----------
+  // Ability factors that actually lost points, worst first (at most two)
   function weakest(parts) {
-    return [...parts].sort((x, y) => x.pts / x.max - y.pts / y.max).slice(0, 2).map(p => p.label.toLowerCase());
+    return parts.filter(x => x.pts < x.max)
+      .sort((x, y) => x.pts / x.max - y.pts / y.max)
+      .slice(0, 2).map(x => x.label.toLowerCase());
   }
 
   function buildExplanation(p) {
@@ -185,7 +188,7 @@
     if (gapScore < 10) {
       risk = `Your ability to take risk (${p.ability.total}/100) and your willingness to take it (${p.willingness.total}/100) are closely matched.`;
     } else if (p.governing === "ability") {
-      risk = `You are comfortable with risk (willingness ${p.willingness.total}/100), but your circumstances limit how much you can afford to take (ability ${p.ability.total}/100), mainly because of your ${weakest(p.ability.parts).join(" and ")}. Following the CFA framework, the lower of the two sets your profile.`;
+      risk = `You are comfortable with risk (willingness ${p.willingness.total}/100), but your circumstances limit how much you can afford to take (ability ${p.ability.total}/100), ${weakest(p.ability.parts).length ? `mainly because of your ${weakest(p.ability.parts).join(" and ")}` : "based on your circumstances"}. Following the CFA framework, the lower of the two sets your profile.`;
     } else {
       risk = `Your finances could support more risk (ability ${p.ability.total}/100), but your answers suggest a sharp fall would be hard to sit through (willingness ${p.willingness.total}/100). Following the CFA framework, the lower of the two sets your profile, because a plan you abandon in a downturn fails.`;
     }
@@ -340,7 +343,7 @@
     const facts = {
       age: i.age,
       lumpSumRupees: i.lump,
-      monthlySipRupees: i.sip,
+      monthlySipRupees: i.sip > 0 ? i.sip : null,
       horizonYears: i.horizon,
       targetReturnPct: i.targetReturn,
       goal: GOALS.find(g => g.value === i.goal).text,
@@ -348,7 +351,7 @@
       riskAbilityScoreOutOf100: p.ability.total,
       riskWillingnessScoreOutOf100: p.willingness.total,
       lowerScoreSetsProfile: gap < 10 ? "closely matched" : p.governing,
-      weakestAbilityFactors: weakest(p.ability.parts),
+      weakestAbilityFactors: weakest(p.ability.parts).length ? weakest(p.ability.parts) : null,
       profile: p.profile.name,
       allocationPct: Object.fromEntries(ORDER.map(k => [C.assets[k].name, al[k]])),
       commoditiesTotalPct: al.gold + al.silver,
@@ -362,7 +365,7 @@
       targetAmountRupees: roundNice(pr.targetCorpus),
       inflationPct: C.cma.inflation,
       requiredMonthlySipRupees: f.verdict !== "achievable" && pr.requiredSip > 0 ? roundNice(pr.requiredSip) : null,
-      constraintNotes: p.notes.map(n => n.text),
+      warningsShownSeparately: p.notes.map(n => n.type),
       equityVehicle: i.vehicle === "stocks" ? "individual Nifty 100 stocks" : "index fund"
     };
     if (i.vehicle === "stocks" && p.basket) {
