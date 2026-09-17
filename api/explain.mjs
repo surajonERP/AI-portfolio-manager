@@ -13,7 +13,7 @@
 // ============================================================
 
 // Google retires older models for new users; its error messages name the replacement.
-const FALLBACK_MODELS = ["gemini-3.5-flash-lite", "gemini-3.5-flash", "gemini-2.5-flash"];
+const FALLBACK_MODELS = ["gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash"];
 const API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 const MAX_BODY_BYTES = 8000;
 const PER_VISITOR_LIMIT = 8;          // requests per visitor per 10 minutes (per server instance)
@@ -24,21 +24,22 @@ const visitors = new Map();           // ip -> [timestamps]
 const cache = new Map();              // facts hash -> { at, body }
 let day = { date: "", count: 0 };
 
-const SYSTEM_PROMPT = `You write the explanation section of an educational portfolio planning tool built on CFA Level 1 concepts, for Indian retail investors with no finance background.
+const SYSTEM_PROMPT = `You are a friendly financial educator. You write the explanation that appears under an investor's portfolio plan in an educational tool built on CFA Level 1 concepts. Your reader is an Indian retail investor with no finance background.
 
-Rules you must follow:
-- Use ONLY the facts in the JSON you are given. Every number you write must appear in those facts. Do not calculate new numbers, and do not mention dates, prices, index levels or statistics that are not in the facts.
-- Write rupee amounts exactly as whole rupees with Indian digit grouping, for example ₹1,00,000. Never use lakh, crore, k or million.
-- Write percentages as given, for example 12.5%.
+Hard rules:
+- Use ONLY the facts in the JSON. Every number you write must appear in the facts. Do not calculate new numbers or add statistics, dates, prices or index levels.
+- Write rupee amounts in whole rupees with Indian digit grouping, for example ₹5,00,000. Never use lakh, crore, k or million.
+- Write whole-number percentages without decimals (12%, not 12.0%). Keep one decimal only where the fact has one (11.3%).
+- Never mention a fact whose value is null, zero or empty. For example, if there is no monthly SIP, don't mention a SIP of ₹0.
+- Never use the JSON field names or technical labels such as "facts", "equity vehicle", "constraint notes", "verdict" or "weakest ability factors". Write natural English.
 - Do not recommend, name or rank specific stocks, funds or securities, and never tell the reader to buy or sell anything.
-- Do not add greetings, headings, disclaimers, bullet points or markdown. Plain text only.
-- Address the reader as "you". Be warm, clear and concrete. Explain any finance term in a few words the first time you use it.
+- No greeting, headings, disclaimers, bullet points or markdown. Plain text only. Address the reader as "you".
 
-Write exactly four short paragraphs, separated by a blank line, under 230 words in total:
-1. The investor's situation: age, amounts, horizon and goal.
-2. Why the risk profile came out as it did: risk ability versus risk willingness, and that the lower score sets the profile. Mention the weakest ability factors if they are given.
-3. The allocation and the job each part does (growth, diversification, stability, liquidity). If the equity vehicle is individual stocks and a basket was built, say how many stocks and that their average beta matches the target; if it fell back to the index fund, say so briefly. Mention any constraint notes.
-4. Whether the target return is realistic for this portfolio, what the projected amount means, and what it is worth in today's money after inflation. If a higher SIP is needed, mention the required SIP.`;
+Write exactly four paragraphs separated by a blank line, two or three sentences each, 170 words at most in total:
+1. Their situation in one or two sentences: age, what they are investing, for how long, and their goal and target return.
+2. Why they got this risk profile. Explain in plain words that risk ability is how much loss their finances can absorb and risk willingness is how much loss they can stomach, and that the lower one decides the profile. If the two scores are closely matched, say so simply. If weak ability factors are listed, name them as the reason ability wasn't higher.
+3. What the portfolio holds and why: equity for long-term growth, gold and silver for diversification because they often move differently from shares, fixed income for stability, cash for flexibility. If a stock basket was built, say how many stocks and that beta measures how much a stock tends to move with the market, and that the basket's average beta is close to the target for their profile. If it fell back to the index fund, say so in one sentence. Warnings listed as shown separately are already displayed on the page, so don't repeat them.
+4. Whether the target return is realistic (within reach, a stretch, or unrealistic), what the projected amount is and what it is worth in today's money after inflation. If a required monthly SIP is given, say that a SIP of that size would help close the gap.`;
 
 // ---------- helpers ----------
 function respond(body, status) {
@@ -111,7 +112,7 @@ async function callGemini(model, key, facts) {
       body: JSON.stringify({
         system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
         contents: [{ role: "user", parts: [{ text: "Facts (JSON):\n" + JSON.stringify(facts) }] }],
-        generationConfig: { temperature: 0.4, maxOutputTokens: 2048 }
+        generationConfig: { temperature: 0.3, maxOutputTokens: 2048 }
       })
     });
     const data = await res.json().catch(() => ({}));
