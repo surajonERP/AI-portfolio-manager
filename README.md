@@ -20,6 +20,7 @@ Educational academic project. Not investment advice.
 - `api/amfi.mjs` – server function: Indian mutual fund NAVs from MFapi / AMFI (runs on Vercel)
 - `api/explain.mjs` – server function: asks Gemini to explain the plan, checks every number, falls back safely
 - `api/screen.mjs` – server function: reads the official Nifty 100 list and calculates 5-year beta, volatility, drawdown and CAGR for each stock
+- `og-image.png` – the preview image shown when the link is shared on LinkedIn or WhatsApp
 - `vercel.json` – gives the stock screen up to 60 seconds to run
 
 ## Live data

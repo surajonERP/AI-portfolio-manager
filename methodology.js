@@ -76,7 +76,25 @@
       ${m.correlation[i].map(v => `<td class="num">${v.toFixed(2)}</td>`).join("")}</tr>`).join("");
 
     mount.innerHTML = `
-      <div class="block">
+      <nav class="m-contents" aria-label="Methodology contents">
+        <p class="principle">The CFA framework makes every decision. AI only explains it.</p>
+        <ol>
+          <li><a href="#m-profile">Investor profile</a></li>
+          <li><a href="#m-allocation">Strategic asset allocation</a></li>
+          <li><a href="#m-risk">Expected return and risk</a></li>
+          <li><a href="#m-cma">Capital market assumptions</a></li>
+          <li><a href="#m-goal">Goal check and SIP planning</a></li>
+          <li><a href="#m-backtest">Back-test and risk measures</a></li>
+          <li><a href="#m-frontier">Efficient frontier</a></li>
+          <li><a href="#m-montecarlo">Monte Carlo and stress tests</a></li>
+          <li><a href="#m-stocks">Nifty 100 stock screen</a></li>
+          <li><a href="#m-ai">AI-written explanations</a></li>
+          <li><a href="#m-data">Data sources</a></li>
+          <li><a href="#m-limits">Limitations</a></li>
+        </ol>
+      </nav>
+
+      <div class="block" id="m-profile">
         <h2 class="block-title">Investor profile</h2>
         <div class="m-body">
           <p><strong>CFA concept:</strong> Investment Policy Statement, risk ability versus risk willingness (Portfolio Management).</p>
@@ -88,7 +106,7 @@
         </div>
       </div>
 
-      <div class="block">
+      <div class="block" id="m-allocation">
         <h2 class="block-title">Strategic asset allocation</h2>
         <div class="m-body">
           <p><strong>CFA concept:</strong> Strategic asset allocation and constraints (Portfolio Management).</p>
@@ -100,7 +118,7 @@
         </div>
       </div>
 
-      <div class="block">
+      <div class="block" id="m-risk">
         <h2 class="block-title">Expected return and risk</h2>
         <div class="m-body">
           <p><strong>CFA concept:</strong> Portfolio return and variance, correlation, Sharpe ratio (Portfolio Management, Quantitative Methods).</p>
@@ -114,7 +132,7 @@
         </div>
       </div>
 
-      <div class="block">
+      <div class="block" id="m-cma">
         <h2 class="block-title">Capital market assumptions</h2>
         <div class="m-body">
           <p><strong>CFA concept:</strong> Estimating expected returns, volatility and correlation from historical data; the limits of using the past to forecast (Quantitative Methods, Portfolio Management).</p>
@@ -139,7 +157,7 @@
         </div>
       </div>
 
-      <div class="block">
+      <div class="block" id="m-goal">
         <h2 class="block-title">Goal check and SIP planning</h2>
         <div class="m-body">
           <p><strong>CFA concept:</strong> Time value of money, future value of a lump sum and of an annuity due (Quantitative Methods); consistency of return objectives with risk tolerance (Portfolio Management).</p>
@@ -154,7 +172,7 @@
         </div>
       </div>
 
-      <div class="block">
+      <div class="block" id="m-backtest">
         <h2 class="block-title">Back-test and risk measures</h2>
         <div class="m-body">
           <p><strong>CFA concept:</strong> Holding period and compound returns, standard deviation, downside risk, beta, Value at Risk (Quantitative Methods, Portfolio Management).</p>
@@ -169,7 +187,7 @@
         </div>
       </div>
 
-      <div class="block">
+      <div class="block" id="m-frontier">
         <h2 class="block-title">Efficient frontier</h2>
         <div class="m-body">
           <p><strong>CFA concept:</strong> Mean-variance analysis, the efficient frontier, the minimum-variance portfolio, the optimal risky portfolio and the capital allocation line (Portfolio Management).</p>
@@ -183,7 +201,7 @@
         </div>
       </div>
 
-      <div class="block">
+      <div class="block" id="m-montecarlo">
         <h2 class="block-title">Monte Carlo and stress tests</h2>
         <div class="m-body">
           <p><strong>CFA concept:</strong> Monte Carlo simulation and the lognormal distribution (Quantitative Methods); scenario analysis (Portfolio Management).</p>
@@ -196,7 +214,7 @@
         </div>
       </div>
 
-      <div class="block">
+      <div class="block" id="m-stocks">
         <h2 class="block-title">Nifty 100 stock screen</h2>
         <div class="m-body">
           <p><strong>CFA concept:</strong> Systematic and unsystematic risk, beta, diversification (Portfolio Management); return measures and drawdown (Quantitative Methods).</p>
@@ -230,7 +248,7 @@
         </div>
       </div>
 
-      <div class="block">
+      <div class="block" id="m-ai">
         <h2 class="block-title">AI-written explanations</h2>
         <div class="m-body">
           <p><strong>The principle:</strong> the CFA framework makes every decision; AI only explains it. Every score, allocation, return, projection and stock pick on this site is calculated by the formulas above. Google's Gemini model is used for one job only: turning those finished results into a plain-language explanation.</p>
@@ -245,14 +263,14 @@
         </div>
       </div>
 
-      <div class="block">
+      <div class="block" id="m-data">
         <h2 class="block-title">Data sources</h2>
         <div class="m-body">
           <p>The Nifty 100 constituent list comes from NSE Indices (<a href="https://www.niftyindices.com" target="_blank" rel="noopener">niftyindices.com</a>). Stock, index, ETF, commodity and currency prices come from Yahoo Finance (<a href="https://finance.yahoo.com" target="_blank" rel="noopener">finance.yahoo.com</a>). Mutual fund NAVs are AMFI data served by MFapi (<a href="https://www.mfapi.in" target="_blank" rel="noopener">mfapi.in</a>; original source <a href="https://www.amfiindia.com" target="_blank" rel="noopener">amfiindia.com</a>). Data is fetched by this site's server and reused for up to six hours.</p>
         </div>
       </div>
 
-      <div class="block">
+      <div class="block" id="m-limits">
         <h2 class="block-title">Limitations</h2>
         <div class="m-body">
           <p>Expected returns are estimates, not promises, and past returns do not guarantee future ones. Yahoo Finance data is accessed through an unofficial interface and may occasionally be delayed or unavailable. Gold and silver are measured with international prices converted to INR, which leaves out Indian import duty and GST. The model covers Indian investments only, so it carries home bias: no exposure to foreign markets. The questionnaire simplifies a full suitability assessment, and taxes, expense ratios and exit loads are not yet included. AI-written explanations can still word things imperfectly even when every number is correct. This is an educational project, not investment advice.</p>

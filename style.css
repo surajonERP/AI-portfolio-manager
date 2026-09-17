@@ -640,3 +640,48 @@ input[type=range]:focus-visible { outline: 2px solid var(--accent); outline-offs
 .advice p.ai-greeting { margin-bottom: 8px; }
 @keyframes pulse { 50% { opacity: 0.25; } }
 @media (prefers-reduced-motion: reduce) { .ai-status::before { animation: none; } }
+
+/* ============================================================
+   Final polish
+   ============================================================ */
+/* Elements focused by script (for screen readers) shouldn't show a focus ring */
+[tabindex="-1"]:focus, [tabindex="-1"]:focus-visible { outline: none; }
+
+.principle {
+  margin: 0 0 16px;
+  font-family: var(--serif); font-weight: 300;
+  font-size: clamp(24px, 3vw, 32px); line-height: 1.3;
+  max-width: 30ch;
+}
+.block-text { margin: 0; max-width: 62ch; color: var(--grey-1); }
+.block-text a { color: var(--white); text-underline-offset: 3px; text-decoration-color: var(--grey-2); }
+
+.m-contents { padding: 48px 0; border-bottom: 1px solid var(--line); }
+.m-contents ol {
+  margin: 24px 0 0; padding: 0; list-style: none;
+  columns: 3 220px; column-gap: 32px;
+  counter-reset: mc;
+}
+.m-contents li { counter-increment: mc; break-inside: avoid; padding: 8px 0; border-top: 1px solid var(--line); font-size: 15px; }
+.m-contents li::before { content: counter(mc); display: inline-block; width: 28px; color: var(--grey-2); font-variant-numeric: tabular-nums; }
+.m-contents a { color: var(--grey-1); text-decoration: none; }
+.m-contents a:hover { color: var(--white); }
+#view-methodology .block { scroll-margin-top: 90px; }
+
+/* Wide tables: subtle shadows at the edges show there is more to scroll */
+.table-wrap {
+  background:
+    linear-gradient(to right, var(--black) 30%, rgba(0,0,0,0)) left / 40px 100% no-repeat local,
+    linear-gradient(to left, var(--black) 30%, rgba(0,0,0,0)) right / 40px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, rgba(245,245,242,0.16), transparent) left / 14px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, rgba(245,245,242,0.16), transparent) right / 14px 100% no-repeat scroll;
+}
+
+@media (max-width: 860px) {
+  /* fade the right edge of the tab bar so it's clear it scrolls */
+  .tabs { -webkit-mask-image: linear-gradient(to right, #000 82%, transparent); mask-image: linear-gradient(to right, #000 82%, transparent); padding-right: 48px; }
+}
+@media (max-width: 860px) {
+  /* the phone header is taller, so in-page links need to stop lower */
+  #view-methodology .block, #stock-basket, #customise, .results, #plan-form { scroll-margin-top: 125px; }
+}

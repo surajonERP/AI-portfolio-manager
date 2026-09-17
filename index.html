@@ -4,8 +4,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Your AI Portfolio Manager</title>
-  <meta name="description" content="An educational portfolio planning tool built on CFA Level 1 concepts, by Suraj Kumar.">
+  <meta name="description" content="A portfolio planning tool built on CFA Level 1 frameworks, with live Indian market data, a Nifty 100 stock screen and AI-written explanations. By Suraj Kumar.">
   <meta name="theme-color" content="#000000">
+  <!-- Link preview on LinkedIn, WhatsApp and other apps -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Your AI Portfolio Manager">
+  <meta property="og:title" content="Your AI Portfolio Manager">
+  <meta property="og:description" content="A portfolio planning tool built on CFA Level 1 frameworks, with live Indian market data, a Nifty 100 stock screen and AI-written explanations. By Suraj Kumar.">
+  <meta property="og:url" content="https://ai-portfolio-manager-blond.vercel.app/">
+  <meta property="og:image" content="https://ai-portfolio-manager-blond.vercel.app/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="627">
+  <meta property="og:image:alt" content="A financial plan is the best thing you can do for your future self. Your AI Portfolio Manager.">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='black'/><text x='50' y='68' font-size='58' text-anchor='middle' fill='white' font-family='Georgia,serif'>₹</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -41,7 +52,7 @@
           <span class="line">your future self.</span>
         </h1>
         <div class="hero-foot">
-          <p class="lede">Answer a few questions about your age, goals and comfort with risk. You get an asset allocation built on CFA frameworks, live market data for every suggested instrument, and a plain-language explanation of why.</p>
+          <p class="lede">Answer a few questions about your age, goals and comfort with risk. You get an asset allocation built on CFA Level 1 frameworks, live Indian market data for every suggested investment, and a plain-language explanation of why, written by AI from the calculations.</p>
           <div class="actions">
             <a class="btn btn-primary" href="#profile">Build my plan</a>
             <a class="btn btn-ghost" href="#methodology">How the numbers work</a>
@@ -58,11 +69,11 @@
           </li>
           <li>
             <h3>Get your allocation</h3>
-            <p>Your risk ability and willingness are scored separately, and the lower one decides your profile. It maps to a mix of Indian equity, gold, silver, fixed income and cash, with the option to hold equity through Nifty 100 stocks screened for your risk level.</p>
+            <p>Your risk ability and willingness are scored separately, and the lower one sets your profile and your mix of Indian equity, gold, silver, fixed income and cash.</p>
           </li>
           <li>
             <h3>Explore and adjust</h3>
-            <p>See returns, risk, the efficient frontier and future projections for your portfolio. Move the weights yourself and watch every number update.</p>
+            <p>See a ten-year back-test, the efficient frontier and thousands of simulated futures. Move the weights yourself and watch every number update.</p>
           </li>
         </ol>
       </div>
@@ -70,11 +81,11 @@
       <div class="block">
         <h2 class="block-title">What you can explore</h2>
         <ul class="sections">
-          <li><a href="#profile"><span class="s-name">Your plan</span><span class="s-desc">Risk profile, suggested allocation and live instrument data</span></a></li>
-          <li><a href="#analytics"><span class="s-name">Analytics</span><span class="s-desc">Returns, volatility, Sharpe ratio, drawdowns and correlations</span></a></li>
-          <li><a href="#optimisation"><span class="s-name">Optimisation</span><span class="s-desc">Where your portfolio sits on the efficient frontier</span></a></li>
-          <li><a href="#projections"><span class="s-name">Projections</span><span class="s-desc">Monte Carlo outcomes and historical stress tests</span></a></li>
-          <li><a href="#methodology"><span class="s-name">Methodology</span><span class="s-desc">Every formula, assumption and data source</span></a></li>
+          <li><a href="#profile"><span class="s-name">Your plan</span><span class="s-desc">Risk profile, allocation, live prices, an optional Nifty 100 stock basket and an AI-written explanation</span></a></li>
+          <li><a href="#analytics"><span class="s-name">Analytics</span><span class="s-desc">Ten years of history against Nifty 50: returns, volatility, Sharpe ratio, drawdowns and correlations</span></a></li>
+          <li><a href="#optimisation"><span class="s-name">Optimisation</span><span class="s-desc">The efficient frontier, the maximum-Sharpe portfolio and the capital allocation line</span></a></li>
+          <li><a href="#projections"><span class="s-name">Projections</span><span class="s-desc">Monte Carlo range of outcomes and historical stress tests</span></a></li>
+          <li><a href="#methodology"><span class="s-name">Methodology</span><span class="s-desc">Every formula, assumption, data source and limitation</span></a></li>
         </ul>
       </div>
 
@@ -91,7 +102,17 @@
           <li>Diversification</li>
           <li>Monte Carlo simulation</li>
           <li>Efficient frontier</li>
+          <li>Capital allocation line</li>
+          <li>Value at Risk</li>
         </ul>
+      </div>
+
+      <div class="block">
+        <h2 class="block-title">How AI is used</h2>
+        <div>
+          <p class="principle">The CFA framework makes every decision. AI only explains it.</p>
+          <p class="block-text">Every score, allocation, return, projection and stock pick is calculated with formulas from the CFA Level 1 curriculum. Google's Gemini then turns those finished results into a plain-language explanation, and every number it writes is checked against the calculations before you see it. <a href="#m-ai">How the checks work</a></p>
+        </div>
       </div>
 
       <div class="block about">
