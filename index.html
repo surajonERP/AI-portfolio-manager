@@ -113,23 +113,17 @@
     <section class="view" id="view-analytics" data-view="analytics" hidden>
       <div class="page-head">
         <h1>Analytics</h1>
-        <p>How your portfolio has behaved historically, measured in INR.</p>
+        <p>How your portfolio would have behaved over the last ten years, measured in INR, compared with Nifty 50.</p>
       </div>
-      <div class="pending">
-        <p>This section is being built. It will show CAGR, volatility, maximum drawdown, Value at Risk, Sharpe and Sortino ratios, beta against Nifty 50, and a correlation matrix.</p>
-        <a class="btn btn-ghost" href="#home">Back to home</a>
-      </div>
+      <div id="analytics-mount"></div>
     </section>
 
     <section class="view" id="view-optimisation" data-view="optimisation" hidden>
       <div class="page-head">
         <h1>Optimisation</h1>
-        <p>Your portfolio compared with the best achievable risk-return trade-offs.</p>
+        <p>Where your portfolio sits against the best achievable trade-offs between risk and return.</p>
       </div>
-      <div class="pending">
-        <p>This section is being built. It will plot the efficient frontier, the capital allocation line, and your suggested and custom portfolios.</p>
-        <a class="btn btn-ghost" href="#home">Back to home</a>
-      </div>
+      <div id="optimisation-mount"></div>
     </section>
 
     <section class="view" id="view-projections" data-view="projections" hidden>
@@ -137,10 +131,7 @@
         <h1>Projections</h1>
         <p>What your lump sum and SIP could grow into, and how the portfolio would have handled past crises.</p>
       </div>
-      <div class="pending">
-        <p>This section is being built. It will run Monte Carlo simulations over your time horizon and stress-test the portfolio against the 2020 COVID crash and the 2022 rate-hike selloff.</p>
-        <a class="btn btn-ghost" href="#home">Back to home</a>
-      </div>
+      <div id="projections-mount"></div>
     </section>
 
     <section class="view" id="view-methodology" data-view="methodology" hidden>
@@ -161,8 +152,11 @@
   <script src="engine.js"></script>
   <script src="market.js"></script>
   <script src="stocks.js"></script>
+  <script src="analytics-engine.js"></script>
+  <script src="charts.js"></script>
   <script src="plan.js"></script>
   <script src="methodology.js"></script>
+  <script src="insights.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

@@ -64,10 +64,12 @@
 
     // Monthly returns only across consecutive months
     const returns = {}; usable.forEach(k => { returns[k] = []; });
+    const returnMonths = [];
     let months = 0;
     for (let i = 1; i < keys.length; i++) {
       if (nextMonth(keys[i - 1]) !== keys[i]) continue;
       months++;
+      returnMonths.push(keys[i]);
       usable.forEach(k => {
         const r = monthly[k].get(keys[i]) / monthly[k].get(keys[i - 1]) - 1 + (yields[k] || 0) / 100 / 12;
         returns[k].push(r);
@@ -110,7 +112,9 @@
       estimates,
       window: enough && keys.length ? { from: keys[0], to: keys[keys.length - 1], months } : null,
       coverage: Object.fromEntries(order.map(k => [k, monthly[k] ? monthly[k].size : 0])),
-      liveAssets: live
+      liveAssets: live,
+      // Monthly returns used for the estimates; the Analytics and Projections tabs reuse them
+      history: enough ? { months: returnMonths, returns: Object.fromEntries(live.map(k => [k, returns[k]])) } : null
     };
   }
 
@@ -217,6 +221,7 @@
     state.window = est.window;
     state.liveAssets = est.liveAssets;
     state.coverage = est.coverage;
+    state.history = est.history;
 
     // Instrument cards
     for (const [k, def] of Object.entries(M.instruments)) {

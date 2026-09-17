@@ -155,6 +155,48 @@
       </div>
 
       <div class="block">
+        <h2 class="block-title">Back-test and risk measures</h2>
+        <div class="m-body">
+          <p><strong>CFA concept:</strong> Holding period and compound returns, standard deviation, downside risk, beta, Value at Risk (Quantitative Methods, Portfolio Management).</p>
+          <p>The Analytics tab replays each portfolio over the same monthly history used for the capital market assumptions. Weights are reset to target every month, and fund costs, brokerage and taxes are ignored. Indian equity is measured with the Nifty 50 index plus dividends, which is also the benchmark.</p>
+          <ul class="formulas">
+            <li><span>Portfolio return in month t</span><code>Rₚ,ₜ = Σ wᵢ · Rᵢ,ₜ</code></li>
+            <li><span>Sharpe ratio</span><code>(mean(Rₚ) × 12 − R<sub>f</sub>) / (s(Rₚ) × √12)</code></li>
+            <li><span>Sortino ratio</span><code>(mean(Rₚ) × 12 − R<sub>f</sub>) / downside deviation, counting only months below R<sub>f</sub> / 12</code></li>
+            <li><span>Beta</span><code>Cov(Rₚ, R<sub>Nifty</sub>) / Var(R<sub>Nifty</sub>)</code></li>
+            <li><span>Value at Risk (${Math.round(C.analytics.var * 100)}%)</span><code>the loss exceeded in only ${Math.round((1 - C.analytics.var) * 100)}% of past months (historical method)</code></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="block">
+        <h2 class="block-title">Efficient frontier</h2>
+        <div class="m-body">
+          <p><strong>CFA concept:</strong> Mean-variance analysis, the efficient frontier, the minimum-variance portfolio, the optimal risky portfolio and the capital allocation line (Portfolio Management).</p>
+          <p>${C.analytics.frontier.samples.toLocaleString("en-IN")} random long-only portfolios (weights between 0% and 100%, adding to 100%) are scored with the expected returns, volatilities and correlations above. The upper edge of the cloud traces the frontier. The minimum-variance, maximum-Sharpe and same-risk portfolios are then refined by repeatedly shifting small amounts of weight between assets and keeping any improvement.</p>
+          <ul class="formulas">
+            <li><span>Maximum Sharpe</span><code>max (E(Rₚ) − R<sub>f</sub>) / σₚ</code></li>
+            <li><span>Frontier at your risk</span><code>max E(Rₚ) subject to σₚ ≤ σ of the suggested portfolio</code></li>
+            <li><span>Capital allocation line</span><code>E(R) = R<sub>f</sub> + Sharpe<sub>max</sub> × σ</code></li>
+          </ul>
+          <p>Frontier weights are very sensitive to the expected-return estimates, so the tool uses the frontier to <em>evaluate</em> the suggested allocation rather than to replace it. Debt funds tend to dominate the maximum-Sharpe portfolio because their measured NAV volatility is low, which understates rare credit and liquidity events.</p>
+        </div>
+      </div>
+
+      <div class="block">
+        <h2 class="block-title">Monte Carlo and stress tests</h2>
+        <div class="m-body">
+          <p><strong>CFA concept:</strong> Monte Carlo simulation and the lognormal distribution (Quantitative Methods); scenario analysis (Portfolio Management).</p>
+          <p>Each of ${C.analytics.monteCarlo.paths.toLocaleString("en-IN")} simulated paths adds the SIP at the start of every month and then applies a random monthly growth factor drawn from a lognormal distribution. Its median matches the portfolio's expected compound return, so the median path lines up with the projection on Your plan. The same inputs always produce the same simulation.</p>
+          <ul class="formulas">
+            <li><span>Monthly growth</span><code>exp(μ + σ · Z), μ = ln(1 + g) / 12, σ = σₚ / √12, Z ~ N(0, 1)</code></li>
+          </ul>
+          <p>Stress tests replay named historical periods (${C.analytics.stressTests.map(t => t.name).join(" and ")}) and each portfolio's worst 12 months in the data, using month-end prices. Real return distributions have fatter tails than the lognormal model assumes, so extreme outcomes are more likely than the simulation suggests.</p>
+          <p><strong>Custom allocations</strong> are flagged as too risky when their expected volatility exceeds that of the next riskier profile's allocation (for Aggressive investors, ${C.analytics.aggressiveCeilingFactor}× its own).</p>
+        </div>
+      </div>
+
+      <div class="block">
         <h2 class="block-title">Nifty 100 stock screen</h2>
         <div class="m-body">
           <p><strong>CFA concept:</strong> Systematic and unsystematic risk, beta, diversification (Portfolio Management); return measures and drawdown (Quantitative Methods).</p>
@@ -182,6 +224,8 @@
             <thead><tr><th>Sector group</th><th>NSE industries included</th></tr></thead>
             <tbody>${groupRows}</tbody>
           </table></div>
+          <p><strong>Why the return hurdle is the risk-free rate:</strong> return is only a light filter, because a stock's past returns say little about its future ones. The hurdle simply removes stocks that didn't beat a liquid fund over five years. A higher hurdle would mostly remove defensive, low-beta companies, whose returns are naturally lower, and leave Conservative investors with too few suitable stocks. The trade-off is that a stock just above the hurdle, with a Sharpe ratio near zero, can move in or out of the basket with a few days of price changes.</p>
+          <p><strong>Sector tilts are expected:</strong> in India, high-beta stocks are mostly cyclicals, such as metals, cement, energy and capital goods, whose profits swing with the economy and commodity prices. Low-beta stocks are mostly defensives, such as healthcare, consumer staples and utilities. Screening by beta therefore tilts Aggressive baskets towards cyclicals and Conservative baskets towards defensives; the sector-group cap stops any one theme from dominating.</p>
           <p><strong>Known biases:</strong> today's Nifty 100 contains companies that grew enough to join it, so their past returns overstate what investors actually earned (survivorship bias). Past risk also does not guarantee future risk. This screen is educational and is not a recommendation to buy any security.</p>
         </div>
       </div>

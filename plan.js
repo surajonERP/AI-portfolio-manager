@@ -327,6 +327,100 @@
       </div>`;
   }
 
+  // ---------- custom allocation ----------
+  function renderCustomise(p) {
+    const rows = ORDER.map(k => `
+      <div class="slider-row">
+        <label for="sl-${k}">${C.assets[k].name}</label>
+        <input type="range" id="sl-${k}" data-asset="${k}" min="0" max="100" step="1" value="${p.allocation[k]}">
+        <output id="out-${k}" for="sl-${k}">${p.allocation[k]}%</output>
+        <span class="slider-ref">Suggested ${p.allocation[k]}%</span>
+      </div>`).join("");
+    return `
+      <div class="result-block" id="customise">
+        <h3>Customise your allocation</h3>
+        <p class="basket-lede">Try a different mix. When the weights add up to 100%, the Analytics, Optimisation and Projections tabs show your custom portfolio next to the suggested one.</p>
+        <div class="sliders">${rows}</div>
+        <div id="custom-status" class="custom-status" aria-live="polite"></div>
+        <div class="result-actions">
+          <button type="button" class="btn btn-ghost" id="custom-scale" hidden>Scale to 100%</button>
+          <button type="button" class="btn btn-ghost" id="custom-reset">Reset to suggested</button>
+        </div>
+        ${p.input.vehicle === "stocks" && p.basket && p.basket.ok ? `<p class="footnote">Changing the Indian equity weight changes the amount for the stock basket, but the stocks listed above are chosen for your suggested allocation.</p>` : ""}
+      </div>`;
+  }
+
+  function readSliders() {
+    const a = {};
+    ORDER.forEach(k => { a[k] = Number(document.getElementById("sl-" + k).value); });
+    return a;
+  }
+
+  function customStatus(p, alloc) {
+    const A = window.APM_ANALYTICS, EC = effectiveConfig();
+    const total = ORDER.reduce((t, k) => t + alloc[k], 0);
+    if (total !== 100) {
+      return { ok: false, html: `<p class="custom-total ${total > 100 ? "over" : "under"}">Total ${total}%. ${total > 100 ? "Reduce" : "Increase"} the weights by ${Math.abs(100 - total)} points, or scale them to 100%.</p>` };
+    }
+    if (ORDER.every(k => alloc[k] === p.allocation[k])) {
+      return { ok: true, same: true, html: `<p class="custom-total">Total 100%. This matches the suggested allocation.</p>` };
+    }
+    const cs = E.portfolioStats(alloc, EC), ss = E.portfolioStats(p.allocation, EC);
+    const ceil = A.riskCeiling(p.profile.index, EC, E);
+    const moved = A.drift(alloc, p.allocation, ORDER);
+    const over = cs.vol > ceil.vol;
+    const cmp = (label, c, s, fmt) => `<div><dt>${label}</dt><dd>${fmt(c)}<span class="vs">Suggested ${fmt(s)}</span></dd></div>`;
+    const pc = n => (n * 100).toFixed(1) + "%";
+    return {
+      ok: true, same: false,
+      html: `
+        <p class="custom-total">Total 100%. ${Math.round(moved)}% of the portfolio has moved away from the suggestion.</p>
+        <dl class="stats compare">
+          ${cmp("Expected compound return", cs.geometric, ss.geometric, pc)}
+          ${cmp("Expected volatility", cs.vol, ss.vol, pc)}
+          ${cmp("Sharpe ratio", cs.sharpe, ss.sharpe, n => n.toFixed(2))}
+        </dl>
+        ${over ? `<p class="custom-warning">This mix is riskier than your ${esc(p.profile.name)} profile supports: expected volatility of ${pc(cs.vol)} is above ${pc(ceil.vol)}${ceil.basis ? `, the risk of ${/^[AEIOU]/i.test(ceil.basis) ? "an" : "a"} ${esc(ceil.basis)} portfolio` : ""}. Expect deeper falls than your profile is designed for.</p>` : ""}`
+    };
+  }
+
+  function wireCustomise(p) {
+    const status = document.getElementById("custom-status");
+    const scaleBtn = document.getElementById("custom-scale");
+    if (!status) return;
+
+    const update = commit => {
+      const alloc = readSliders();
+      ORDER.forEach(k => { document.getElementById("out-" + k).textContent = alloc[k] + "%"; });
+      const st = customStatus(p, alloc);
+      status.innerHTML = st.html;
+      scaleBtn.hidden = st.ok;
+      if (commit && st.ok) {
+        window.APM_STATE.custom = st.same ? null : { allocation: alloc };
+        document.dispatchEvent(new CustomEvent("apm:custom", { detail: window.APM_STATE.custom }));
+      }
+    };
+
+    document.querySelectorAll("#customise input[type=range]").forEach(el => {
+      el.addEventListener("input", () => update(false));
+      el.addEventListener("change", () => update(true));
+    });
+    scaleBtn.addEventListener("click", () => {
+      const alloc = readSliders();
+      const total = ORDER.reduce((t, k) => t + alloc[k], 0) || 1;
+      const scaled = {};
+      ORDER.forEach(k => { scaled[k] = alloc[k] * 100 / total; });
+      const rounded = E.roundTo100(scaled);
+      ORDER.forEach(k => { document.getElementById("sl-" + k).value = rounded[k]; });
+      update(true);
+    });
+    document.getElementById("custom-reset").addEventListener("click", () => {
+      ORDER.forEach(k => { document.getElementById("sl-" + k).value = p.allocation[k]; });
+      update(true);
+    });
+    update(false);
+  }
+
   function assumptionNote() {
     const M = window.APM_MARKET;
     if (M && M.window && M.liveAssets && M.liveAssets.length) {
@@ -394,6 +488,8 @@
 
       ${renderBasket(p)}
 
+      ${renderCustomise(p)}
+
       <div class="result-block">
         <h3>Goal check</h3>
         <dl class="stats">
@@ -411,6 +507,8 @@
       </div>
 
       <div class="result-actions">
+        <a class="btn btn-primary" href="#analytics">See the analytics</a>
+        <a class="btn btn-ghost" href="#projections">See projections</a>
         <a class="btn btn-ghost" href="#methodology">See how this was calculated</a>
         <button type="button" class="btn btn-ghost" id="edit-answers">Edit my answers</button>
       </div>`;
@@ -462,9 +560,11 @@
         plan.screen = screen && !screen.error ? { fetchedAt: screen.fetchedAt, constituents: screen.constituents, count: screen.count } : { error: screen && screen.error };
       }
       window.APM_STATE.plan = plan;
+      window.APM_STATE.custom = null;
       document.dispatchEvent(new CustomEvent("apm:plan", { detail: plan }));
 
       resultsMount.innerHTML = renderResults(plan);
+      wireCustomise(plan);
       resultsMount.hidden = false;
       resultsMount.scrollIntoView({ behavior: "smooth", block: "start" });
       resultsMount.focus({ preventScroll: true });

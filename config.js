@@ -227,5 +227,33 @@ window.APM_CONFIG = {
     // loosened by these percentage points, one step at a time, and the plan says so.
     // The beta band is never loosened.
     relaxSteps: [ { vol: 4, drawdown: 5 }, { vol: 8, drawdown: 10 }, { vol: 12, drawdown: 15 } ]
+  },
+
+  // ---------- 10. Analytics, optimisation and projections ----------
+  analytics: {
+    benchmarkLabel: "Nifty 50 (with dividends)",  // the Indian equity history series
+    rebalance: "monthly",   // back-tests reset to target weights every month
+    var: 0.95,              // Value at Risk confidence level
+
+    frontier: {
+      samples: 5000,        // random long-only portfolios used to trace the frontier
+      seed: 20260917
+    },
+
+    // A custom allocation is flagged when its volatility exceeds that of the next
+    // riskier profile's allocation (for Aggressive: its own volatility x this factor).
+    aggressiveCeilingFactor: 1.25,
+
+    monteCarlo: {
+      paths: 2000,
+      percentiles: [10, 25, 50, 75, 90]
+    },
+
+    stressTests: [
+      { name: "COVID-19 crash", from: "2020-01", to: "2020-03",
+        note: "Markets fell sharply as lockdowns began." },
+      { name: "2022 rate-hike selloff", from: "2021-12", to: "2022-06",
+        note: "Central banks raised rates quickly to fight inflation, hitting equities and bonds." }
+    ]
   }
 };
