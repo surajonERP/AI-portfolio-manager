@@ -97,11 +97,11 @@ window.APM_CONFIG = {
 
   // ---------- 3. Profiles: final score = LOWER of ability and willingness ----------
   profiles: [
-    { name: "Conservative",            upTo: 20,  allocation: { inEq: 15, usEq: 5,  gold: 8,  silver: 2, fi: 55, cash: 15 } },
-    { name: "Moderately Conservative", upTo: 40,  allocation: { inEq: 25, usEq: 8,  gold: 8,  silver: 2, fi: 45, cash: 12 } },
-    { name: "Balanced",                upTo: 60,  allocation: { inEq: 35, usEq: 12, gold: 10, silver: 2, fi: 33, cash: 8 } },
-    { name: "Growth",                  upTo: 80,  allocation: { inEq: 45, usEq: 17, gold: 10, silver: 2, fi: 21, cash: 5 } },
-    { name: "Aggressive",              upTo: 100, allocation: { inEq: 55, usEq: 22, gold: 8,  silver: 2, fi: 10, cash: 3 } }
+    { name: "Conservative",            upTo: 20,  allocation: { inEq: 20, gold: 8,  silver: 2, fi: 55, cash: 15 } },
+    { name: "Moderately Conservative", upTo: 40,  allocation: { inEq: 33, gold: 8,  silver: 2, fi: 45, cash: 12 } },
+    { name: "Balanced",                upTo: 60,  allocation: { inEq: 47, gold: 10, silver: 2, fi: 33, cash: 8 } },
+    { name: "Growth",                  upTo: 80,  allocation: { inEq: 62, gold: 10, silver: 2, fi: 21, cash: 5 } },
+    { name: "Aggressive",              upTo: 100, allocation: { inEq: 77, gold: 8,  silver: 2, fi: 10, cash: 3 } }
   ],
 
   // ---------- 4. Constraints that override the score ----------
@@ -115,7 +115,6 @@ window.APM_CONFIG = {
   // Live tickers and NAVs are connected in Phase 3.
   assets: {
     inEq:   { name: "Indian equity",  group: "Equity",       vehicle: "Nifty 50 index fund or ETF" },
-    usEq:   { name: "US equity",      group: "Equity",       vehicle: "S&P 500 fund of funds (Indian mutual fund)" },
     gold:   { name: "Gold",           group: "Commodities",  vehicle: "Gold ETF (NSE-listed)" },
     silver: { name: "Silver",         group: "Commodities",  vehicle: "Silver ETF (NSE-listed)" },
     fi:     { name: "Fixed income",   group: "Fixed income", vehicle: "Short-duration debt mutual fund" },
@@ -127,17 +126,16 @@ window.APM_CONFIG = {
   // these anchors and 10 years of market history (see section 8). Volatility and
   // correlation are then taken from history. If live data fails, these are used as they are.
   cma: {
-    expReturn:  { inEq: 13.5, usEq: 12.5, gold: 10.0, silver: 10.0, fi: 7.0, cash: 6.0 },
-    volatility: { inEq: 17.0, usEq: 16.0, gold: 14.0, silver: 25.0, fi: 3.0, cash: 1.0 },
-    // correlation matrix, order: inEq, usEq, gold, silver, fi, cash
-    order: ["inEq", "usEq", "gold", "silver", "fi", "cash"],
+    expReturn:  { inEq: 13.5, gold: 10.0, silver: 10.0, fi: 7.0, cash: 6.0 },
+    volatility: { inEq: 17.0, gold: 14.0, silver: 25.0, fi: 3.0, cash: 1.0 },
+    // correlation matrix, order: inEq, gold, silver, fi, cash
+    order: ["inEq", "gold", "silver", "fi", "cash"],
     correlation: [
-      [1.00, 0.45, 0.00, 0.15, 0.10, 0.00],
-      [0.45, 1.00, 0.10, 0.15, 0.05, 0.00],
-      [0.00, 0.10, 1.00, 0.75, 0.15, 0.00],
-      [0.15, 0.15, 0.75, 1.00, 0.05, 0.00],
-      [0.10, 0.05, 0.15, 0.05, 1.00, 0.30],
-      [0.00, 0.00, 0.00, 0.00, 0.30, 1.00]
+      [1.00, 0.00, 0.15, 0.10, 0.00],
+      [0.00, 1.00, 0.75, 0.15, 0.00],
+      [0.15, 0.75, 1.00, 0.05, 0.00],
+      [0.10, 0.15, 0.05, 1.00, 0.30],
+      [0.00, 0.00, 0.00, 0.30, 1.00]
     ],
     riskFree: 6.0,   // %
     inflation: 5.0   // %, used to show today's value of the future corpus
@@ -153,7 +151,11 @@ window.APM_CONFIG = {
     // How estimates are built from history
     lookbackYears: 10,     // months of history used = lookbackYears x 12
     minMonths: 60,         // an asset needs at least this many months, or its anchor is used
-    historyWeight: 0.5,    // expected return = 50% historical + 50% long-run anchor
+    // Share of HISTORY in each expected return; the rest comes from the long-run anchor.
+    // Equity and debt returns are backed by cash flows (earnings, dividends, coupons), so
+    // history informs them. Commodities produce no cash flows, so their expected return is
+    // the long-run anchor only; history is still used for their volatility and correlation.
+    historyWeight: { inEq: 0.5, gold: 0, silver: 0, fi: 0.5, cash: 0.5 },
 
     // Series used to ESTIMATE each asset class's return, volatility and correlation.
     // Long, clean index histories represent the asset class as a whole.
@@ -161,8 +163,6 @@ window.APM_CONFIG = {
     history: {
       inEq:   { source: "yahoo", symbol: "^NSEI",    currency: "INR", addYield: 1.3,
                 label: "Nifty 50 index, plus 1.3% a year for dividends (the index excludes them)" },
-      usEq:   { source: "yahoo", symbol: "^SP500TR", currency: "USD",
-                label: "S&P 500 Total Return index, converted to INR" },
       gold:   { source: "yahoo", symbol: "GC=F",     currency: "USD",
                 label: "Gold futures, converted to INR" },
       silver: { source: "yahoo", symbol: "SI=F",     currency: "USD",
@@ -177,11 +177,35 @@ window.APM_CONFIG = {
     // asset class for an Indian investor, chosen for low cost and wide availability.
     instruments: {
       inEq:   { source: "yahoo", symbol: "NIFTYBEES.NS", name: "Nippon India ETF Nifty 50 BeES", kind: "ETF, NSE" },
-      usEq:   { source: "amfi",  find: "Motilal Oswal S&P 500 Index Fund", name: "Motilal Oswal S&P 500 Index Fund", kind: "Mutual fund, Direct Growth" },
       gold:   { source: "yahoo", symbol: "GOLDBEES.NS",  name: "Nippon India ETF Gold BeES", kind: "ETF, NSE" },
       silver: { source: "yahoo", symbol: "SILVERBEES.NS", name: "Nippon India Silver ETF", kind: "ETF, NSE" },
       fi:     { source: "amfi",  code: "119016", name: "HDFC Short Term Debt Fund", kind: "Mutual fund, Direct Growth" },
       cash:   { source: "amfi",  code: "119091", name: "HDFC Liquid Fund", kind: "Mutual fund, Direct Growth" }
     }
+  },
+
+  // ---------- 9. Nifty 100 stock screen (when the user chooses individual stocks) ----------
+  // Stocks are matched to the investor mainly by RISK, because a stock's beta and volatility
+  // are far more persistent than its returns. Past return is only a filter.
+  stocks: {
+    lookbackYears: 5,     // weekly prices over this period
+    minYears: 3,          // stocks with less listed history are skipped
+    count: 10,            // stocks in the basket
+    minStocks: 5,         // fewer than this and the tool falls back to the index fund
+    minIndustries: 3,     // ...or fewer industries than this
+    minEquity: 50000,     // ...or less than this many rupees for equity
+    sectorCap: 3,         // at most this many stocks from one industry
+    // Return filter: 5-year CAGR (with dividends) must beat the risk-free rate
+    // Risk targets per profile. Vol and drawdown are hard limits; beta is the ranking target.
+    profiles: {
+      "Conservative":            { targetBeta: 0.60, maxVol: 25, maxDrawdown: 30 },
+      "Moderately Conservative": { targetBeta: 0.75, maxVol: 28, maxDrawdown: 35 },
+      "Balanced":                { targetBeta: 0.90, maxVol: 32, maxDrawdown: 40 },
+      "Growth":                  { targetBeta: 1.05, maxVol: 36, maxDrawdown: 50 },
+      "Aggressive":              { targetBeta: 1.20, maxVol: 45, maxDrawdown: 60 }
+    },
+    // If too few stocks pass, the volatility and drawdown limits are loosened by these
+    // percentage points, one step at a time, and the plan says so.
+    relaxSteps: [ { vol: 4, drawdown: 5 }, { vol: 8, drawdown: 10 }, { vol: 12, drawdown: 15 } ]
   }
 };

@@ -76,7 +76,7 @@
 
     const enough = months >= M.minMonths;
     const live = enough ? usable : [];
-    const w = M.historyWeight;
+    const weightFor = k => (typeof M.historyWeight === "number" ? M.historyWeight : (M.historyWeight[k] ?? 0.5));
 
     const estimates = {};
     const expReturn = {}, volatility = {};
@@ -87,12 +87,13 @@
         const histVol = sampleSd(r) * Math.sqrt(12) * 100; // annualised volatility, %
         const growth = r.reduce((g, x) => g * (1 + x), 1);
         const histCagr = (Math.pow(growth, 12 / r.length) - 1) * 100;
+        const w = weightFor(k);
         const blended = w * histMean + (1 - w) * anchor.expReturn[k];
-        estimates[k] = { live: true, histMean, histVol, histCagr, anchor: anchor.expReturn[k], used: blended };
+        estimates[k] = { live: true, histMean, histVol, histCagr, anchor: anchor.expReturn[k], weight: w, used: blended };
         expReturn[k] = blended;
         volatility[k] = histVol;
       } else {
-        estimates[k] = { live: false, anchor: anchor.expReturn[k], used: anchor.expReturn[k] };
+        estimates[k] = { live: false, anchor: anchor.expReturn[k], weight: 0, used: anchor.expReturn[k] };
         expReturn[k] = anchor.expReturn[k];
         volatility[k] = anchor.volatility[k];
       }
@@ -108,6 +109,7 @@
       cma: { ...anchor, expReturn, volatility, correlation },
       estimates,
       window: enough && keys.length ? { from: keys[0], to: keys[keys.length - 1], months } : null,
+      coverage: Object.fromEntries(order.map(k => [k, monthly[k] ? monthly[k].size : 0])),
       liveAssets: live
     };
   }
@@ -186,7 +188,7 @@
     const years = M.lookbackYears + 1;
 
     const [hist, cardsY, amfi] = await Promise.allSettled([
-      getJson(`/api/yahoo?symbols=${enc(historyYahoo)}&range=${M.lookbackYears}y&interval=1mo`, 15000),
+      getJson(`/api/yahoo?symbols=${enc(historyYahoo)}&range=${M.lookbackYears}y&interval=1d&reduce=monthEnd`, 15000),
       getJson(`/api/yahoo?symbols=${enc(cardYahoo)}&range=1y&interval=1d`, 15000),
       getJson(`/api/amfi?codes=${amfiCodes.join(",")}${amfiFinds.length ? `&find=${encodeURIComponent(amfiFinds.join("|"))}` : ""}&years=${years}`, 15000)
     ]);
@@ -214,6 +216,7 @@
     state.estimates = est.estimates;
     state.window = est.window;
     state.liveAssets = est.liveAssets;
+    state.coverage = est.coverage;
 
     // Instrument cards
     for (const [k, def] of Object.entries(M.instruments)) {

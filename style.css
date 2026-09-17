@@ -505,3 +505,17 @@ th.num { text-align: right; }
 @media (max-width: 520px) {
   .cards { grid-template-columns: 1fr; }
 }
+
+/* ============================================================
+   Stock basket
+   ============================================================ */
+.basket-lede { max-width: 70ch; margin: 0 0 16px; color: var(--grey-1); }
+.basket-table { min-width: 860px; }
+.basket-table td { font-size: 14px; }
+.small { font-size: 12px; }
+.result-block .stats { margin-bottom: 28px; }
+.card-date a { color: var(--grey-1); text-underline-offset: 3px; }
+.card-date a:hover { color: var(--white); }
+#stock-basket { scroll-margin-top: 90px; }
+.formulas code.plain { font-family: var(--sans); font-size: 15px; }
+.m-table.cma { min-width: 820px; }

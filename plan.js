@@ -36,6 +36,10 @@
     { value: "purchase", text: "A big purchase, like a home or education", phrase: "save for a big purchase" },
     { value: "income", text: "Regular income", phrase: "generate regular income" }
   ];
+  const EQUITY_VEHICLE = [
+    { value: "fund", text: "Through an index fund" },
+    { value: "stocks", text: "Through individual Nifty 100 stocks" }
+  ];
   const LIQUIDITY = [
     { value: "no", text: "No" },
     { value: "some", text: "Maybe a small part" },
@@ -102,6 +106,7 @@
           </div>
           ${radioGroup("goal", "What is this money for?", GOALS)}
           ${radioGroup("liquidity", "Might you need part of this money before your horizon ends?", LIQUIDITY)}
+          ${radioGroup("vehicle", "How would you like to hold your Indian equity?", EQUITY_VEHICLE, "With stocks, the system screens the Nifty 100 for companies whose past risk fits your profile. Your monthly SIP still goes into the index fund, because small monthly amounts can't buy whole shares sensibly.")}
         </div>
 
         <div class="form-group">
@@ -128,7 +133,7 @@
   }
 
   // ---------- reading and validating ----------
-  const RADIOS = ["goal", "liquidity", "income", "dependents", "emergency", "emi", "share", "experience", "drop", "range"];
+  const RADIOS = ["goal", "liquidity", "vehicle", "income", "dependents", "emergency", "emi", "share", "experience", "drop", "range"];
 
   function readForm(form) {
     const fd = new FormData(form);
@@ -167,7 +172,7 @@
     const who = i.name ? esc(i.name) + ", you" : "You";
     const goal = GOALS.find(g => g.value === i.goal).phrase;
     const al = p.allocation;
-    const equity = al.inEq + al.usEq, commodities = al.gold + al.silver;
+    const commodities = al.gold + al.silver;
 
     const paras = [];
 
@@ -184,7 +189,18 @@
     }
     paras.push(risk);
 
-    paras.push(`With this in mind, your best course of action is a <strong>${p.profile.name}</strong> portfolio: ${equity}% in equity (${al.inEq}% Indian, ${al.usEq}% US), ${commodities}% in commodities (${al.gold}% gold, ${al.silver}% silver), ${al.fi}% in fixed income and ${al.cash}% in cash. It is expected to compound at about ${pct(p.stats.geometric)} a year, with annual volatility of about ${pct(p.stats.vol)}.`);
+    paras.push(`With this in mind, your best course of action is a <strong>${p.profile.name}</strong> portfolio: ${al.inEq}% in Indian equity, ${commodities}% in commodities (${al.gold}% gold, ${al.silver}% silver), ${al.fi}% in fixed income and ${al.cash}% in cash. It is expected to compound at about ${pct(p.stats.geometric)} a year, with annual volatility of about ${pct(p.stats.vol)}.`);
+
+    const b = p.basket;
+    if (i.vehicle === "stocks" && b) {
+      if (b.ok) {
+        paras.push(`You chose to hold Indian equity through individual stocks. From the Nifty 100, the system picked ${b.holdings.length} companies across ${b.industries} industries whose last five years of risk suit a ${p.profile.name} investor. Their average beta is ${b.avgBeta.toFixed(2)} against a target of ${b.target.targetBeta.toFixed(2)}, meaning they have tended to move ${b.avgBeta < 1 ? "less" : "more"} than the market.`);
+      } else if (b.reason === "too-few") {
+        paras.push(`You chose individual stocks, but ${inr(b.equityAmount)} in equity is too little to build a properly diversified basket of whole shares, so the plan uses the index fund instead. Stocks become practical from roughly ${inr(b.suggestedMinimum)} in equity.`);
+      } else {
+        paras.push("You chose individual stocks, but the Nifty 100 screen couldn't be loaded right now, so the plan shows the index fund instead.");
+      }
+    }
 
     const f = p.feasibility, pr = p.projection;
     let feas;
@@ -220,6 +236,16 @@
   function renderCards(p) {
     const M = window.APM_MARKET || { status: "offline", cards: {} };
     const cards = ORDER.map(k => {
+      if (k === "inEq" && p.basket && p.basket.ok) {
+        return `<div class="card">
+          <p class="card-asset"><span>${C.assets[k].name}</span><span class="num">${p.allocation[k]}%</span></p>
+          <h4 class="card-name">Nifty 100 stock basket</h4>
+          <p class="card-kind">${p.basket.holdings.length} stocks, ${p.basket.industries} industries</p>
+          <p class="card-price">β ${p.basket.avgBeta.toFixed(2)}</p>
+          <p class="card-change"><span>Average beta against Nifty 50</span></p>
+          <p class="card-date"><a href="#stock-basket">See the stocks below</a></p>
+        </div>`;
+      }
       const c = M.cards && M.cards[k];
       const def = C.market.instruments[k];
       const head = `<p class="card-asset"><span>${C.assets[k].name}</span><span class="num">${p.allocation[k]}%</span></p>
@@ -251,6 +277,53 @@
       </div>`;
   }
 
+  function renderBasket(p) {
+    const b = p.basket, i = p.input;
+    if (i.vehicle !== "stocks" || !b) return "";
+    if (!b.ok) {
+      const msg = b.reason === "too-few"
+        ? `With ${inr(b.equityAmount)} for equity, the basket would hold only ${b.found} ${b.found === 1 ? "stock" : "stocks"} from ${b.foundIndustries} ${b.foundIndustries === 1 ? "industry" : "industries"} in whole shares. The tool needs at least ${C.stocks.minStocks} stocks across ${C.stocks.minIndustries} industries and ${inr(C.stocks.minEquity)} in equity; below that, company-specific risk is too concentrated, so the index fund is used instead. Stocks become practical from roughly ${inr(b.suggestedMinimum)} in equity.`
+        : "The Nifty 100 screen couldn't be loaded right now, so the index fund is shown instead. Try again in a few minutes.";
+      return `<div class="result-block" id="stock-basket"><h3>Nifty 100 stock basket</h3><p class="data-status">${msg}</p></div>`;
+    }
+
+    const st = b.stats, lim = b.limits, t = b.target;
+    const rows = b.holdings.map(h => `<tr>
+      <td>${esc(h.name)}<br><span class="muted small">${esc(h.symbol)}</span></td>
+      <td class="muted">${esc(h.industry)}</td>
+      <td class="num">${price(h.price)}</td>
+      <td class="num">${h.shares}</td>
+      <td class="num">${inr(h.invested)}</td>
+      <td class="num">${h.beta.toFixed(2)}</td>
+      <td class="num">${h.vol.toFixed(1)}%</td>
+      <td class="num">${h.maxDrawdown.toFixed(1)}%</td>
+      <td class="num">${h.cagr.toFixed(1)}%</td>
+    </tr>`).join("");
+
+    return `
+      <div class="result-block" id="stock-basket">
+        <h3>Nifty 100 stock basket</h3>
+        <p class="basket-lede">Of ${st.screened} Nifty 100 stocks screened, ${st.passedReturn} beat the ${C.cma.riskFree}% risk-free rate over five years and ${st.passedRisk} stayed within the risk limits for a ${esc(b.profile)} investor: volatility up to ${lim.maxVol}% and maximum drawdown no worse than −${lim.maxDrawdown}%. They were ranked by how close their beta is to ${t.targetBeta.toFixed(2)}, with at most ${C.stocks.sectorCap} per industry.</p>
+        ${b.relaxed ? `<p class="data-status">Too few stocks met the original limits (volatility ${t.maxVol}%, drawdown −${t.maxDrawdown}%), so they were loosened to the levels above.</p>` : ""}
+        ${st.skippedPrice ? `<p class="data-status">${st.skippedPrice} otherwise suitable ${st.skippedPrice === 1 ? "stock was" : "stocks were"} skipped because one share costs more than the amount set aside per stock.</p>` : ""}
+        <dl class="stats">
+          <div><dt>Invested in stocks</dt><dd>${inr(b.invested)}</dd></div>
+          <div><dt>Left over for the index fund</dt><dd>${inr(b.leftover)}</dd></div>
+          <div><dt>Average beta</dt><dd>${b.avgBeta.toFixed(2)}</dd></div>
+          <div><dt>Average volatility</dt><dd>${b.avgVol.toFixed(1)}%</dd></div>
+          <div><dt>Average max drawdown</dt><dd>${b.avgDrawdown.toFixed(1)}%</dd></div>
+          <div><dt>Average 5-year CAGR</dt><dd>${b.avgCagr.toFixed(1)}%</dd></div>
+        </dl>
+        <div class="table-wrap basket-wrap">
+          <table class="basket-table">
+            <thead><tr><th>Company</th><th>Industry</th><th class="num">Price</th><th class="num">Shares</th><th class="num">Amount</th><th class="num">Beta</th><th class="num">Volatility</th><th class="num">Max drawdown</th><th class="num">5-yr CAGR</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+        <p class="footnote">A historical screen for education, not a recommendation to buy these stocks. Beta, volatility and drawdown use five years of weekly prices adjusted for dividends and splits. Averages are weighted by amount invested; the basket's true volatility is lower than the average because stocks don't move perfectly together. Today's Nifty 100 contains companies that grew enough to join it, so past returns look better than a real investor would have earned (survivorship bias).${i.sip ? ` Your ${inr(p.split.inEq.sip)} monthly SIP for Indian equity still goes into the index fund.` : ""}</p>
+      </div>`;
+  }
+
   function assumptionNote() {
     const M = window.APM_MARKET;
     if (M && M.window && M.liveAssets && M.liveAssets.length) {
@@ -261,7 +334,7 @@
   }
 
   // ---------- results markup ----------
-  const ORDER = ["inEq", "usEq", "gold", "silver", "fi", "cash"];
+  const ORDER = C.cma.order;
   const VERDICT_TEXT = { achievable: "Within reach", stretch: "A stretch", unrealistic: "Unrealistic for this profile" };
 
   function renderResults(p) {
@@ -315,6 +388,8 @@
       </div>
 
       ${renderCards(p)}
+
+      ${renderBasket(p)}
 
       <div class="result-block">
         <h3>Goal check</h3>
@@ -370,7 +445,19 @@
         button.textContent = "Build my plan";
       }
 
-      const plan = E.buildPlan(inp, effectiveConfig());
+      const cfg = effectiveConfig();
+      const plan = E.buildPlan(inp, cfg);
+
+      if (inp.vehicle === "stocks") {
+        button.disabled = true;
+        button.textContent = "Screening Nifty 100 stocks…";
+        const screen = await window.APM_LOAD_SCREEN(55000);
+        button.disabled = false;
+        button.textContent = "Build my plan";
+        plan.basket = window.APM_STOCKS.buildBasket(screen && !screen.error ? screen : null,
+          plan.profile.name, plan.split.inEq.lump, C, cfg.cma.riskFree);
+        plan.screen = screen && !screen.error ? { fetchedAt: screen.fetchedAt, constituents: screen.constituents, count: screen.count } : { error: screen && screen.error };
+      }
       window.APM_STATE.plan = plan;
       document.dispatchEvent(new CustomEvent("apm:plan", { detail: plan }));
 
