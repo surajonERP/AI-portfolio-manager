@@ -56,7 +56,10 @@
     }).join("");
 
     const stockRows = Object.entries(C.stocks.profiles).map(([name, t]) => `<tr><td>${name}</td>
-      <td class="num">${t.targetBeta.toFixed(2)}</td><td class="num">${t.maxVol}%</td><td class="num">−${t.maxDrawdown}%</td></tr>`).join("");
+      <td class="num">${t.targetBeta.toFixed(2)}</td><td class="num">${(t.targetBeta - C.stocks.betaBand).toFixed(2)} to ${(t.targetBeta + C.stocks.betaBand).toFixed(2)}</td><td class="num">${t.maxVol}%</td><td class="num">−${t.maxDrawdown}%</td></tr>`).join("");
+
+    const groupRows = Object.entries(C.stocks.sectorGroups).map(([g, list]) =>
+      `<tr><td>${g}</td><td class="muted">${list.join(", ")}</td></tr>`).join("");
 
     let dataStatus;
     if (loading) dataStatus = "Loading market history…";
@@ -165,15 +168,20 @@
           <p>Stocks are matched to the investor mainly by <em>risk</em>, because a stock's beta and volatility persist far more than its returns do. The selection runs in four steps:</p>
           <ul class="formulas steps-list">
             <li><span>1. Filter</span><code class="plain">At least ${C.stocks.minYears} years listed, and 5-year CAGR above the ${C.cma.riskFree}% risk-free rate</code></li>
-            <li><span>2. Risk limits</span><code class="plain">Volatility and maximum drawdown within the profile's limits (table below)</code></li>
-            <li><span>3. Rank</span><code class="plain">Closest beta to the profile's target beta first</code></li>
-            <li><span>4. Diversify and size</span><code class="plain">${C.stocks.count} stocks, at most ${C.stocks.sectorCap} per industry, equal rupee amounts, whole shares only</code></li>
+            <li><span>2. Risk limits</span><code class="plain">Beta within ±${C.stocks.betaBand} of the profile's target, and volatility and maximum drawdown within the profile's limits (table below)</code></li>
+            <li><span>3. Rank</span><code class="plain">Closest beta to the target first</code></li>
+            <li><span>4. Diversify and size</span><code class="plain">Up to ${C.stocks.count} stocks, no more than ${Math.round(C.stocks.maxGroupShare * 100)}% of them from one sector group, equal rupee amounts, whole shares only</code></li>
           </ul>
           <div class="table-wrap"><table class="m-table">
-            <thead><tr><th>Profile</th><th class="num">Target beta</th><th class="num">Max volatility</th><th class="num">Max drawdown</th></tr></thead>
+            <thead><tr><th>Profile</th><th class="num">Target beta</th><th class="num">Beta band</th><th class="num">Max volatility</th><th class="num">Max drawdown</th></tr></thead>
             <tbody>${stockRows}</tbody>
           </table></div>
-          <p>If fewer than ${C.stocks.count} stocks pass, the volatility and drawdown limits are loosened in small steps and the plan says so. If the equity amount is below ${C.stocks.minEquity.toLocaleString("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 })}, or the basket would have fewer than ${C.stocks.minStocks} stocks or ${C.stocks.minIndustries} industries in whole shares, company-specific risk would be too concentrated, so the tool uses the index fund instead. Monthly SIPs always go to the index fund.</p>
+          <p>The beta band is a hard limit. If fewer than ${C.stocks.count} stocks fit, the basket holds fewer stocks, down to ${C.stocks.minStocks}, rather than filling the gap with stocks whose risk doesn't match the investor. Only if even ${C.stocks.minStocks} can't be found are the volatility and drawdown limits loosened in small steps, and the plan says so. If the equity amount is below ${C.stocks.minEquity.toLocaleString("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 })}, or the basket would have fewer than ${C.stocks.minStocks} stocks or ${C.stocks.minGroups} sector groups, the tool uses the index fund instead. Monthly SIPs always go to the index fund.</p>
+          <p><strong>Why sector groups instead of NSE industries:</strong> NSE labels some closely related businesses as different industries. Oil and gas, coal and power companies, for example, respond to the same forces: energy prices, interest rates and government policy. A cap on industry labels alone let four such companies into one basket. Industries are therefore combined into broader groups based on shared economic drivers:</p>
+          <div class="table-wrap"><table class="m-table">
+            <thead><tr><th>Sector group</th><th>NSE industries included</th></tr></thead>
+            <tbody>${groupRows}</tbody>
+          </table></div>
           <p><strong>Known biases:</strong> today's Nifty 100 contains companies that grew enough to join it, so their past returns overstate what investors actually earned (survivorship bias). Past risk also does not guarantee future risk. This screen is educational and is not a recommendation to buy any security.</p>
         </div>
       </div>

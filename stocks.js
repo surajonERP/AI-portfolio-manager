@@ -3,14 +3,25 @@
 // Pure logic (no screen code), so every rule can be tested.
 //
 // Steps:
-//  1. Filters: enough history, 5-year CAGR above the risk-free rate,
-//     volatility and maximum drawdown within the profile's limits.
+//  1. Filters: enough history, 5-year CAGR above the risk-free rate, beta
+//     within the profile's band, volatility and drawdown within limits.
 //  2. Ranking: closest beta to the profile's target beta first.
-//  3. Diversification: at most N stocks per industry.
+//  3. Diversification: at most 30% of stocks from one sector group.
 //  4. Sizing: equal rupee amount per stock, whole shares only.
 // ============================================================
 
 (function (root) {
+
+  function groupOf(industry, C) {
+    for (const [group, list] of Object.entries(C.stocks.sectorGroups || {}))
+      if (list.includes(industry)) return group;
+    return industry || "Other";
+  }
+
+  // Largest group allowance for a basket of a given size, e.g. 30% of 10 = 3, of 7 = 2
+  function groupCapFor(size, S) {
+    return Math.max(1, Math.round(S.maxGroupShare * size));
+  }
 
   function buildBasket(screen, profileName, equityAmount, C, riskFree) {
     const S = C.stocks;
@@ -21,64 +32,69 @@
       return { ...base, ok: false, reason: "unavailable" };
     }
 
-    const perStock = equityAmount / S.count;
-    const eligibleHistory = screen.stocks.filter(s => s.years >= S.minYears);
+    const all = screen.stocks.map(s => ({ ...s, group: groupOf(s.industry, C) }));
+    const eligibleHistory = all.filter(s => s.years >= S.minYears);
     const passReturn = eligibleHistory.filter(s => s.cagr > riskFree);
+    const lo = target.targetBeta - S.betaBand, hi = target.targetBeta + S.betaBand;
+    const inBand = passReturn.filter(s => s.beta >= lo && s.beta <= hi);
 
-    // Try the profile limits first. Loosen them ONLY if too few stocks pass on risk grounds
-    // (price problems are handled separately and never loosen the risk limits).
     const steps = [{ vol: 0, drawdown: 0 }].concat(S.relaxSteps || []);
-    let ranked = [], used = null, passedRisk = [];
+    let best = null, used = null, passedRisk = [], lastAttempt = null;
 
-    for (let i = 0; i < steps.length; i++) {
+    for (let i = 0; i < steps.length && !best; i++) {
       const maxVol = target.maxVol + steps[i].vol;
       const maxDd = target.maxDrawdown + steps[i].drawdown;
-      passedRisk = passReturn.filter(s => s.vol <= maxVol && Math.abs(s.maxDrawdown) <= maxDd);
-      ranked = [...passedRisk].sort((a, b) =>
+      used = { step: i, maxVol, maxDrawdown: maxDd, betaLow: lo, betaHigh: hi };
+      passedRisk = inBand.filter(s => s.vol <= maxVol && Math.abs(s.maxDrawdown) <= maxDd);
+      const ranked = [...passedRisk].sort((a, b) =>
         Math.abs(a.beta - target.targetBeta) - Math.abs(b.beta - target.targetBeta) || a.vol - b.vol);
-      used = { step: i, maxVol, maxDrawdown: maxDd };
 
-      // how many could be chosen under the industry cap, ignoring price
-      const perInd = {}; let capacity = 0;
-      for (const s of ranked) {
-        if ((perInd[s.industry] || 0) >= S.sectorCap) continue;
-        perInd[s.industry] = (perInd[s.industry] || 0) + 1;
-        if (++capacity >= S.count) break;
+      // Try the biggest basket first, then smaller ones
+      for (let size = S.count; size >= S.minStocks; size--) {
+        const cap = groupCapFor(size, S);
+        const perStock = equityAmount / size;
+        const perGroup = {};
+        const picked = []; let skippedPrice = 0;
+        for (const s of ranked) {
+          if (picked.length >= size) break;
+          if ((perGroup[s.group] || 0) >= cap) continue;
+          if (s.price > perStock) { skippedPrice++; continue; }
+          perGroup[s.group] = (perGroup[s.group] || 0) + 1;
+          picked.push(s);
+        }
+        const groups = Object.keys(perGroup).length;
+        lastAttempt = { picked, skippedPrice, groups, cap };
+        if (picked.length === size && groups >= S.minGroups) {
+          best = { size, picked, skippedPrice, cap, groups };
+          break;
+        }
       }
-      if (capacity >= S.count) break;
-    }
-
-    // Pick in rank order, respecting the industry cap and whole-share affordability
-    const perIndustry = {};
-    const chosen = []; let skippedPrice = 0;
-    for (const s of ranked) {
-      if (chosen.length >= S.count) break;
-      if ((perIndustry[s.industry] || 0) >= S.sectorCap) continue;
-      if (s.price > perStock) { skippedPrice++; continue; }
-      perIndustry[s.industry] = (perIndustry[s.industry] || 0) + 1;
-      chosen.push(s);
     }
 
     const stats = {
       screened: screen.count,
       withHistory: eligibleHistory.length,
       passedReturn: passReturn.length,
+      inBand: inBand.length,
       passedRisk: passedRisk.length,
-      skippedPrice
+      skippedPrice: best ? best.skippedPrice : (lastAttempt ? lastAttempt.skippedPrice : 0)
     };
 
-    const industries = new Set(chosen.map(c => c.industry)).size;
-    if (equityAmount < S.minEquity || chosen.length < S.minStocks || industries < S.minIndustries) {
-      // Rough minimum: enough to buy one share of each of the cheapest suitable stocks
+    if (!best || equityAmount < S.minEquity) {
       const prices = passReturn.map(s => s.price).sort((a, b) => a - b);
       const median = prices.length ? prices[Math.floor(prices.length / 2)] : 0;
-      const estimate = Math.ceil(median * S.count / 1000) * 1000;
-      return { ...base, ok: false, reason: "too-few", stats, limits: used, found: chosen.length, foundIndustries: industries,
-               suggestedMinimum: Math.max(S.minEquity, estimate) };
+      const estimate = Math.ceil(median * S.minStocks / 1000) * 1000;
+      const lack = equityAmount < S.minEquity || (lastAttempt && lastAttempt.skippedPrice > 0) ? "money" : "stocks";
+      return {
+        ...base, ok: false, reason: "too-few", lack, stats, limits: used,
+        found: lastAttempt ? lastAttempt.picked.length : 0,
+        foundGroups: lastAttempt ? lastAttempt.groups : 0,
+        suggestedMinimum: Math.max(S.minEquity, estimate)
+      };
     }
 
-    const perAmount = equityAmount / chosen.length;
-    const holdings = chosen.map(s => {
+    const perAmount = equityAmount / best.size;
+    const holdings = best.picked.map(s => {
       const shares = Math.floor(perAmount / s.price);
       return { ...s, shares, invested: shares * s.price };
     });
@@ -88,13 +104,14 @@
     return {
       ...base, ok: true, holdings, stats,
       limits: used, relaxed: used.step > 0,
+      size: best.size, groupCap: best.cap, fullSize: best.size === S.count,
       invested, leftover: equityAmount - invested,
       avgBeta: wAvg("beta"), avgVol: wAvg("vol"), avgDrawdown: wAvg("maxDrawdown"), avgCagr: wAvg("cagr"),
-      industries: new Set(holdings.map(h => h.industry)).size
+      groups: best.groups
     };
   }
 
-  const API = { buildBasket };
+  const API = { buildBasket, groupOf };
   if (typeof module !== "undefined" && module.exports) module.exports = API;
   root.APM_STOCKS = API;
 

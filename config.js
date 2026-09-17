@@ -190,13 +190,32 @@ window.APM_CONFIG = {
   stocks: {
     lookbackYears: 5,     // weekly prices over this period
     minYears: 3,          // stocks with less listed history are skipped
-    count: 10,            // stocks in the basket
+    count: 10,            // largest basket; fewer stocks are used if fewer fit
     minStocks: 5,         // fewer than this and the tool falls back to the index fund
-    minIndustries: 3,     // ...or fewer industries than this
+    minGroups: 3,         // ...or fewer sector groups than this
     minEquity: 50000,     // ...or less than this many rupees for equity
-    sectorCap: 3,         // at most this many stocks from one industry
+    betaBand: 0.25,       // a stock's beta must be within ± this of the profile's target beta
+    maxGroupShare: 0.30,  // at most this share of the basket's stocks from one sector group
+
+    // NSE industry labels grouped by shared economic drivers, so related industries
+    // (for example oil and gas, coal and power) count together for diversification.
+    // Any industry not listed here counts as its own group.
+    sectorGroups: {
+      "Financials":             ["Financial Services"],
+      "Energy and utilities":   ["Oil Gas & Consumable Fuels", "Power"],
+      "Materials":              ["Metals & Mining", "Construction Materials", "Chemicals", "Forest Materials"],
+      "Industrials":            ["Capital Goods", "Construction", "Services"],
+      "Real estate":            ["Realty"],
+      "Consumer staples":       ["Fast Moving Consumer Goods"],
+      "Consumer discretionary": ["Automobile and Auto Components", "Consumer Durables", "Consumer Services", "Textiles", "Media Entertainment & Publication"],
+      "Healthcare":             ["Healthcare"],
+      "Technology":             ["Information Technology"],
+      "Telecom":                ["Telecommunication"]
+    },
+
     // Return filter: 5-year CAGR (with dividends) must beat the risk-free rate
-    // Risk targets per profile. Vol and drawdown are hard limits; beta is the ranking target.
+    // Risk targets per profile. Volatility, drawdown and the beta band are hard limits;
+    // inside the band, stocks closest to the target beta come first.
     profiles: {
       "Conservative":            { targetBeta: 0.60, maxVol: 25, maxDrawdown: 30 },
       "Moderately Conservative": { targetBeta: 0.75, maxVol: 28, maxDrawdown: 35 },
@@ -204,8 +223,9 @@ window.APM_CONFIG = {
       "Growth":                  { targetBeta: 1.05, maxVol: 36, maxDrawdown: 50 },
       "Aggressive":              { targetBeta: 1.20, maxVol: 45, maxDrawdown: 60 }
     },
-    // If too few stocks pass, the volatility and drawdown limits are loosened by these
-    // percentage points, one step at a time, and the plan says so.
+    // If even the minimum basket can't be formed, the volatility and drawdown limits are
+    // loosened by these percentage points, one step at a time, and the plan says so.
+    // The beta band is never loosened.
     relaxSteps: [ { vol: 4, drawdown: 5 }, { vol: 8, drawdown: 10 }, { vol: 12, drawdown: 15 } ]
   }
 };

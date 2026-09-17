@@ -194,7 +194,7 @@
     const b = p.basket;
     if (i.vehicle === "stocks" && b) {
       if (b.ok) {
-        paras.push(`You chose to hold Indian equity through individual stocks. From the Nifty 100, the system picked ${b.holdings.length} companies across ${b.industries} industries whose last five years of risk suit a ${p.profile.name} investor. Their average beta is ${b.avgBeta.toFixed(2)} against a target of ${b.target.targetBeta.toFixed(2)}, meaning they have tended to move ${b.avgBeta < 1 ? "less" : "more"} than the market.`);
+        paras.push(`You chose to hold Indian equity through individual stocks. From the Nifty 100, the system picked ${b.holdings.length} companies across ${b.groups} sector groups whose last five years of risk suit a ${p.profile.name} investor. Their average beta is ${b.avgBeta.toFixed(2)} against a target of ${b.target.targetBeta.toFixed(2)}, meaning they have tended to move ${b.avgBeta < 1 ? "less" : "more"} than the market.`);
       } else if (b.reason === "too-few") {
         paras.push(`You chose individual stocks, but ${inr(b.equityAmount)} in equity is too little to build a properly diversified basket of whole shares, so the plan uses the index fund instead. Stocks become practical from roughly ${inr(b.suggestedMinimum)} in equity.`);
       } else {
@@ -240,7 +240,7 @@
         return `<div class="card">
           <p class="card-asset"><span>${C.assets[k].name}</span><span class="num">${p.allocation[k]}%</span></p>
           <h4 class="card-name">Nifty 100 stock basket</h4>
-          <p class="card-kind">${p.basket.holdings.length} stocks, ${p.basket.industries} industries</p>
+          <p class="card-kind">${p.basket.holdings.length} stocks, ${p.basket.groups} sector groups</p>
           <p class="card-price">β ${p.basket.avgBeta.toFixed(2)}</p>
           <p class="card-change"><span>Average beta against Nifty 50</span></p>
           <p class="card-date"><a href="#stock-basket">See the stocks below</a></p>
@@ -282,7 +282,9 @@
     if (i.vehicle !== "stocks" || !b) return "";
     if (!b.ok) {
       const msg = b.reason === "too-few"
-        ? `With ${inr(b.equityAmount)} for equity, the basket would hold only ${b.found} ${b.found === 1 ? "stock" : "stocks"} from ${b.foundIndustries} ${b.foundIndustries === 1 ? "industry" : "industries"} in whole shares. The tool needs at least ${C.stocks.minStocks} stocks across ${C.stocks.minIndustries} industries and ${inr(C.stocks.minEquity)} in equity; below that, company-specific risk is too concentrated, so the index fund is used instead. Stocks become practical from roughly ${inr(b.suggestedMinimum)} in equity.`
+        ? (b.lack === "money"
+            ? `With ${inr(b.equityAmount)} for equity, a basket of whole shares couldn't reach ${C.stocks.minStocks} suitable stocks across ${C.stocks.minGroups} sector groups. The tool needs at least that, and ${inr(C.stocks.minEquity)} in equity; below that, company-specific risk is too concentrated, so the index fund is used instead. Stocks become practical from roughly ${inr(b.suggestedMinimum)} in equity.`
+            : `Too few Nifty 100 stocks currently fit a ${esc(b.profile)} investor's beta band (${b.limits.betaLow.toFixed(2)} to ${b.limits.betaHigh.toFixed(2)}) and risk limits to build a basket of at least ${C.stocks.minStocks} stocks across ${C.stocks.minGroups} sector groups, even after loosening the volatility and drawdown limits. The index fund is used instead.`)
         : "The Nifty 100 screen couldn't be loaded right now, so the index fund is shown instead. Try again in a few minutes.";
       return `<div class="result-block" id="stock-basket"><h3>Nifty 100 stock basket</h3><p class="data-status">${msg}</p></div>`;
     }
@@ -290,7 +292,7 @@
     const st = b.stats, lim = b.limits, t = b.target;
     const rows = b.holdings.map(h => `<tr>
       <td>${esc(h.name)}<br><span class="muted small">${esc(h.symbol)}</span></td>
-      <td class="muted">${esc(h.industry)}</td>
+      <td class="muted">${esc(h.group)}<br><span class="small">${esc(h.industry)}</span></td>
       <td class="num">${price(h.price)}</td>
       <td class="num">${h.shares}</td>
       <td class="num">${inr(h.invested)}</td>
@@ -303,7 +305,8 @@
     return `
       <div class="result-block" id="stock-basket">
         <h3>Nifty 100 stock basket</h3>
-        <p class="basket-lede">Of ${st.screened} Nifty 100 stocks screened, ${st.passedReturn} beat the ${C.cma.riskFree}% risk-free rate over five years and ${st.passedRisk} stayed within the risk limits for a ${esc(b.profile)} investor: volatility up to ${lim.maxVol}% and maximum drawdown no worse than −${lim.maxDrawdown}%. They were ranked by how close their beta is to ${t.targetBeta.toFixed(2)}, with at most ${C.stocks.sectorCap} per industry.</p>
+        <p class="basket-lede">Of ${st.screened} Nifty 100 stocks screened, ${st.passedReturn} beat the ${C.cma.riskFree}% risk-free rate over five years, ${st.inBand} of those had a beta between ${lim.betaLow.toFixed(2)} and ${lim.betaHigh.toFixed(2)} (the band around a ${esc(b.profile)} investor's ${t.targetBeta.toFixed(2)} target), and ${st.passedRisk} also stayed within volatility of ${lim.maxVol}% and maximum drawdown of −${lim.maxDrawdown}%. The closest betas were picked first, with no more than ${b.groupCap} ${b.groupCap === 1 ? "stock" : "stocks"} from any sector group.</p>
+        ${!b.fullSize ? `<p class="data-status">Only ${b.size} suitable stocks fit these limits with enough spread across sector groups, so the basket holds ${b.size} instead of ${C.stocks.count}, with more money in each. Fewer suitable stocks are better than filling the basket with ones that don't match your risk.</p>` : ""}
         ${b.relaxed ? `<p class="data-status">Too few stocks met the original limits (volatility ${t.maxVol}%, drawdown −${t.maxDrawdown}%), so they were loosened to the levels above.</p>` : ""}
         ${st.skippedPrice ? `<p class="data-status">${st.skippedPrice} otherwise suitable ${st.skippedPrice === 1 ? "stock was" : "stocks were"} skipped because one share costs more than the amount set aside per stock.</p>` : ""}
         <dl class="stats">
@@ -316,7 +319,7 @@
         </dl>
         <div class="table-wrap basket-wrap">
           <table class="basket-table">
-            <thead><tr><th>Company</th><th>Industry</th><th class="num">Price</th><th class="num">Shares</th><th class="num">Amount</th><th class="num">Beta</th><th class="num">Volatility</th><th class="num">Max drawdown</th><th class="num">5-yr CAGR</th></tr></thead>
+            <thead><tr><th>Company</th><th>Sector group</th><th class="num">Price</th><th class="num">Shares</th><th class="num">Amount</th><th class="num">Beta</th><th class="num">Volatility</th><th class="num">Max drawdown</th><th class="num">5-yr CAGR</th></tr></thead>
             <tbody>${rows}</tbody>
           </table>
         </div>
